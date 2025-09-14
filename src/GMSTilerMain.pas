@@ -90,7 +90,6 @@ type
     Layout4: TLayout;
     Layout5: TLayout;
     Button1: TButton;
-    SkPaintBox1: TSkPaintBox;
     Button2: TButton;
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
@@ -102,8 +101,10 @@ type
     procedure Button2Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure MenuItem2Click(Sender: TObject);
-    procedure SkPaintBox1Draw(ASender: TObject; const ACanvas: ISkCanvas;
-      const ADest: TRectF; const AOpacity: Single);
+    procedure ScrollBox1Paint(Sender: TObject; Canvas: TCanvas;
+      const ARect: TRectF);
+    procedure Layout5Paint(Sender: TObject; Canvas: TCanvas;
+      const ARect: TRectF);
   private
     Images: TObjectList<TCompositeImage>;
     FDrawProc: TSkDrawProc;
@@ -124,6 +125,8 @@ const
   BaseDir: String = 'D:/work/assets/PVG/RPG_Tools/RPGTools_CharacterPieces_1/Male/';
 {$ELSEIF DEFINED(OSX64)}
   BaseDir: String = '/Volumes/Seagate4T/Assets/2D/PVG/RPG_Tools/RPGTools_CharacterPieces_1/Male/';
+{$ELSEIF DEFINED(LINUX64)}
+  BaseDir: String = '/home/simon/PVG/RPG_Tools/RPGTools_CharacterPieces_1/Male/';
 {$ENDIF}
 
 implementation
@@ -131,7 +134,7 @@ implementation
 {$R *.fmx}
 
 uses
-  FMX.Skia.Canvas;
+  Math, FMX.Skia.Canvas;
 
 procedure TForm1.AddImage(const AFilename: String; const SpriteSizeX: Integer; const SpriteSizeY: Integer; const FrameCount: Integer);
 var
@@ -165,7 +168,8 @@ begin
   AddImage(BaseDir + 'Top/RTP_1/Spritesheet.png', 200, 200, 2496);
   AddImage(BaseDir + 'Weapons/RTP_Sword/Spritesheet.png', 200, 200, 2496);
   AddImage(BaseDir + 'Weapons/RTP_Shield/Spritesheet.png', 200, 200, 2496);
-  SkPaintBox1.Redraw;
+
+  Layout5.RePaint;
 end;
 
 procedure TForm1.MenuItem2Click(Sender: TObject);
@@ -175,7 +179,7 @@ end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-  CompositeToBitmap(8 * 200, 200, PaintComposite);
+  CompositeToBitmap(200, 200, PaintComposite);
 end;
 
 procedure TForm1.CompositeToBitmap(const AWidth, AHeight: Integer;
@@ -212,26 +216,47 @@ begin
   Images := TObjectList<TCompositeImage>.Create;
 end;
 
+procedure TForm1.Layout5Paint(Sender: TObject; Canvas: TCanvas;
+  const ARect: TRectF);
+begin
+  if Assigned(FDrawProc) then
+    begin
+      var LCanvas: ISkCanvas := TSkCanvasCustom(Canvas).Canvas;
+      FDrawProc(LCanvas, ARect);
+    end;
+end;
+
 procedure TForm1.PaintComposite(const ACanvas: ISkCanvas; const ADest: TRectF);
 var
   LPaint1: ISkPaint;
   I: Integer;
+  scale, hscale, vscale: Single;
+  SpriteRect, RenderRect: TRectF;
 begin
+  SpriteRect := RectF(0, 0, 200, 200);
+  Scale := Min((ADest.Width / SpriteRect.Width), (ADest.Height / SpriteRect.Height));
+  var L, T, R, B: Single;
+  L := (ADest.Width - (SpriteRect.Width * Scale)) / 2;
+  T := (ADest.Height - (SpriteRect.Height * Scale)) / 2;
+  R := L + (SpriteRect.Width * Scale);
+  B := T + (SpriteRect.Height * Scale);
+  RenderRect := RectF(L, T, R, B);
+
   LPaint1 := TSkPaint.Create;
   LPaint1.AntiAlias := False;
   for I := 0 to Images.Count -1 do
     begin
+//      if I <> 1 then continue;
       if(Assigned(Images[I].Image)) then
-        ACanvas.DrawImage(Images[I].Image, 0, 0, LPaint1);
+        ACanvas.DrawImageRect(Images[I].Image, SpriteRect, RenderRect, LPaint1);
     end;
 end;
 
-procedure TForm1.SkPaintBox1Draw(ASender: TObject; const ACanvas: ISkCanvas;
-  const ADest: TRectF; const AOpacity: Single);
+procedure TForm1.ScrollBox1Paint(Sender: TObject; Canvas: TCanvas;
+  const ARect: TRectF);
 begin
-  if Assigned(FDrawProc) then
-    FDrawProc(ACanvas, ADest);
 end;
+
 
 { TCompositeImage }
 

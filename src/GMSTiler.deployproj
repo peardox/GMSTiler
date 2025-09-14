@@ -188,6 +188,16 @@
             <Overwrite>True</Overwrite>
             <Required>True</Required>
         </DeployFile>
+        <DeployFile Include="Linux64\Debug\GMSTiler" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>GMSTiler\</RemoteDir>
+            <RemoteName>GMSTiler</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
         <DeployFile Include="$(BDS)\binlinux64\libsk4d.so" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
             <RemoteDir>GMSTiler\</RemoteDir>
             <RemoteName>libsk4d.so</RemoteName>
