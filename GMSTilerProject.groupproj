@@ -1,0 +1,36 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{8FEE01B8-69A5-4F9C-8FBB-3B6C65F871AA}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="src\GMSTiler.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="GMSTiler">
+        <MSBuild Projects="src\GMSTiler.dproj"/>
+    </Target>
+    <Target Name="GMSTiler:Clean">
+        <MSBuild Projects="src\GMSTiler.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="GMSTiler:Make">
+        <MSBuild Projects="src\GMSTiler.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="GMSTiler"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="GMSTiler:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="GMSTiler:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
