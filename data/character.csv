@@ -64,10 +64,10 @@
 "pistol attack 1",        24,         "S",        3,       8
 "pistol attack 2",        24,         "S",        3,       8
 "pistol fidget",          24,         "S",        3,       8
-"xbox-Rifle walk",        64,         "L",        8,       8
-"xbox-Rifle idle",        40,         "L",        5,       8
-"xbox-Rifle attack 1",    24,         "S",        3,       8
-"xbox-Rifle fidget",      24,         "S",        3,       8
+"xbow-Rifle walk",        64,         "L",        8,       8
+"xbow-Rifle idle",        40,         "L",        5,       8
+"xbow-Rifle attack 1",    24,         "S",        3,       8
+"xbow-Rifle fidget",      24,         "S",        3,       8
 
 
 

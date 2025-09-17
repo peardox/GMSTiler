@@ -4,7 +4,9 @@ uses
   System.StartUpCopy,
   FMX.Forms,
   FMX.Skia,
-  GMSTilerMain in 'GMSTilerMain.pas' {Form1};
+  GMSTilerMain in 'GMSTilerMain.pas' {Form1},
+  LayoutCSV in 'LayoutCSV.pas',
+  TileUtils in 'TileUtils.pas';
 
 {$R *.res}
 
