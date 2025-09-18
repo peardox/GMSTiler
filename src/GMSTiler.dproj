@@ -313,6 +313,7 @@
         </DCCReference>
         <DCCReference Include="LayoutCSV.pas"/>
         <DCCReference Include="TileUtils.pas"/>
+        <DCCReference Include="SpriteAtlas.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -490,6 +491,12 @@
                 <DeployFile LocalName="Win64\Debug\GMSTiler.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win64">
                         <RemoteName>GMSTiler.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win64\Debug\GMSTiler.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="Win64">
+                        <RemoteName>GMSTiler.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

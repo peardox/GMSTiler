@@ -6,7 +6,8 @@ uses
   FMX.Skia,
   GMSTilerMain in 'GMSTilerMain.pas' {Form1},
   LayoutCSV in 'LayoutCSV.pas',
-  TileUtils in 'TileUtils.pas';
+  TileUtils in 'TileUtils.pas',
+  SpriteAtlas in 'SpriteAtlas.pas';
 
 {$R *.res}
 

@@ -7,6 +7,7 @@ uses
   System.Generics.Collections, System.Generics.Defaults;
 
 type
+  TRectArray = Array of TRect;
   TFitScale = Record
     Scale: Single;
     Offset: TPointF;
@@ -41,10 +42,15 @@ function GetLayerRect(NewRect: TRect; BoundRect: TRect): TRect;
 function EncloseRect(ARect: TRect; Border: Integer = 0): TRect;
 function EncloseRectF(ARect: TRect; Border: Integer = 0): TRectF;
 procedure ScanFiles(const ADir: String; const ASubDir: String; const AFileExt: TArray<String>; var AList: TObjectList<TFileDirectory>; var GroupID: Integer; const Debug: TDebugProc = Nil);
+function SheetRemap(const SpriteIndex: Integer; const SpriteCount: Integer; const SheetSizeX: Integer; const SheetSizeY: Integer): TRectArray;
+procedure GrabSprite(LSurface: ISkSurface; const AFilename: String);
+function IsSpriteEmpty(Pixels: ISkSurface; const AAlphaThreshold: Single = 0): Boolean; overload;
+function IsSpriteEmpty(Pixels: ISkImage; const AAlphaThreshold: Single = 0): Boolean; overload;
+function IsSpriteEmpty(Pixels: ISkPixmap; const AAlphaThreshold: Single = 0): Boolean; overload;
 
 implementation
 
-uses Math, System.Hash;
+uses Math, System.Hash, FMX.Graphics;
 
 constructor TFileDirectory.Create(const AParentDir: String; ASubDir,
   AFileName: String; AGroupID: Integer);
@@ -111,7 +117,56 @@ end;
 
 function GetBoundingRect(Pixels: ISkPixmap; const AAlphaThreshold: Single): TRect;
 begin
-  Result := GetBoundingRect(Rect(0, 0, Pixels.Width, Pixels.Height), Pixels, AAlphaThreshold);
+  if Assigned(Pixels) then
+    Result := GetBoundingRect(Rect(0, 0, Pixels.Width, Pixels.Height), Pixels, AAlphaThreshold)
+  else
+    Result := Rect(0,0,0,0);
+end;
+
+function IsSpriteEmpty(Pixels: ISkImage; const AAlphaThreshold: Single): Boolean;
+begin
+  if(Assigned(Pixels.PeekPixels)) then
+    Result := IsSpriteEmpty(Pixels.PeekPixels, AAlphaThreshold)
+  else
+    Raise Exception.Create('IsSpriteEmpty : Null Pixmap');
+end;
+
+function IsSpriteEmpty(Pixels: ISkSurface; const AAlphaThreshold: Single): Boolean;
+begin
+  if(Assigned(Pixels.PeekPixels)) then
+    Result := IsSpriteEmpty(Pixels.PeekPixels, AAlphaThreshold)
+  else
+    Raise Exception.Create('IsSpriteEmpty : Null Pixmap');
+end;
+
+function IsSpriteEmpty(Pixels: ISkPixmap; const AAlphaThreshold: Single): Boolean;
+var
+  X: Integer;
+  Y: Integer;
+  BoundTop: Integer;
+  Found: Boolean;
+begin
+  BoundTop := 0;
+
+  Found := False;
+  For BoundTop := 0 to (Pixels.Height - 1) do
+    begin
+      For X := 0 to (Pixels.Width - 1) do
+        begin
+          if(Pixels.GetAlpha(X, BoundTop) > AAlphaThreshold) then
+            begin
+              Found := True;
+              break;
+            end;
+        end;
+      if(Found) then
+        break;
+    end;
+
+  if(not Found) then
+    Result := True
+  else
+    Result := False;
 end;
 
 function GetBoundingRect(SubRect: TRect; Pixels: ISkPixmap; const AAlphaThreshold: Single): TRect;
@@ -293,6 +348,67 @@ begin
     until FindNext(sr) <> 0;
     FindClose(sr);
     end;
+end;
+
+function SheetRemap(const SpriteIndex: Integer; const SpriteCount: Integer; const SheetSizeX: Integer; const SheetSizeY: Integer): TRectArray;
+var
+  Col: Integer;
+  Row: Integer;
+  procedure SplitRun(var Runs: Integer; const SpriteCol: Integer; const SpritesLeft: Integer);
+  begin
+    if(SpritesLeft > 0) then
+      begin
+        Inc(Runs);
+        if(SpriteCol + SpritesLeft) > SheetSizeX then
+          begin
+            SplitRun(Runs, 0, SpritesLeft - (SheetSizeX - SpriteCol));
+          end;
+     end;
+  end;
+  procedure MakeRun(var Res: TRectArray; const Runs: Integer; const SpriteRow: Integer;  const SpriteCol: Integer; const SpritesLeft: Integer);
+  var
+    I: Integer;
+    FromCol: Integer;
+    ToCol: Integer;
+  begin
+    if(SpritesLeft > 0) then
+      begin
+        FromCol := SpriteCol;
+        ToCol := SpritesLeft;
+        for I := 0 to Runs - 1 do
+          begin
+            if (FromCol + ToCol) > SheetSizeX then
+              begin
+                Res[I] := Rect(FromCol,SpriteRow + I,FromCol + (SheetSizeX - FromCol),SpriteRow + I + 1);
+                ToCol := ToCol - (SheetSizeX - FromCol)
+              end
+            else
+              Res[I] := Rect(FromCol, SpriteRow + I, FromCol + ToCol, SpriteRow + I + 1);
+            FromCol := 0;
+          end;
+     end;
+  end;
+begin
+  Row := SpriteIndex div SheetSizeX;
+  Col := SpriteIndex - (Row * SheetSizeX);
+  var Runs := 0;
+  SplitRun(Runs, Col, SpriteCount);
+  SetLength(Result, Runs);
+  MakeRun(Result, Runs, Row, Col, SpriteCount);
+end;
+
+procedure GrabSprite(LSurface: ISkSurface; const AFilename: String);
+var
+  LStream: TMemoryStream;
+  LBitMap: TBitMap;
+begin
+  LStream := TMemoryStream.Create;
+  LSurface.MakeImageSnapshot.EncodeToStream(LStream);
+  LBitmap := TBitmap.Create;
+  LBitmap.LoadFromStream(LStream);
+  LBitmap.SaveToFile(AFilename);
+  LBitmap.Free;
+  LStream.Free;
 end;
 
 end.

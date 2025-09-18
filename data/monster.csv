@@ -11,7 +11,7 @@
 "get hit",                24,         "S",        3,       8
 "critical HP",            24,         "P",        3,       8
 "down",                   24,         "S",        3,       8
-"down poses",             32,         "U",        3,       8
+"down poses",             32,         "U",        4,       8
 "behaviour",              24,         "P",        3,       8
 
 

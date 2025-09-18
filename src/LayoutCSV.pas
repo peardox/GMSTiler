@@ -14,15 +14,17 @@ type
   TSheetLayoutItem = class
   strict private
     FAction: string;
+    FFirstFrame: Integer;
     FFrames: Integer;
     FActionType: TActionTypeSet;
-    FActionFrrames: Integer;
+    FActionFrames: Integer;
     FActionDirections: Integer;
   public
     property Action: string read FAction write FAction;
+    property FirstFrame: Integer read FFirstFrame write FFirstFrame;
     property Frames: Integer read FFrames write FFrames;
     property ActionType: TActionTypeSet read FActionType write FActionType;
-    property ActionFrrames: Integer read FActionFrrames write FActionFrrames;
+    property ActionFrames: Integer read FActionFrames write FActionFrames;
     property ActionDirections: Integer read FActionDirections write FActionDirections;
   end;
 
@@ -40,6 +42,7 @@ type
     procedure ImportLayoutCSV(const AFilename: String);
     procedure Clear;
     function Dump: String;
+    property Items: TObjectList<TSheetLayoutItem> read FLayout write FLayout;
   end;
 
   TDirectionLayoutItem = class
@@ -66,7 +69,20 @@ type
     function Dump: String;
   end;
 
+  TSheetLayoutDict = TObjectDictionary<TSheetFormat, TSheetLayout>;
+
+var
+  SheetLayouts: TSheetLayoutDict;
+
 const
+{$IF DEFINED(MSWINDOWS)}
+  LayoutDir: String = 'D:/work/assets/PVG/';
+{$ELSEIF DEFINED(OSX64)}
+  LayoutDir: String = '/Volumes/Seagate4T/Assets/2D/PVG/';
+{$ELSEIF DEFINED(LINUX64)}
+  LayoutDir: String = '/home/simon/PVG/';
+{$ENDIF}
+
   CHECK_DBLQUOTE = $22;
   CHECK_COMMA    = $2C;
   CHECK_MINUS    = $2D;
@@ -116,8 +132,8 @@ begin
     begin
       R := Flayout[I];
       Result := Result +
-                Format('%2d - %-20s - %3d - %3d - %3d' + sLineBreak, [
-                  I, R.Action, R.Frames, R.ActionFrrames, R.ActionDirections
+                Format('%2d - %-20s - %4d - %2d - %2d - %2d' + sLineBreak, [
+                  I, R.Action, R.FirstFrame, R.Frames, R.ActionFrames, R.ActionDirections
                   ]);
     end;
 end;
@@ -128,8 +144,10 @@ var
   I: Integer;
   S: String;
   Rec: TSheetLayoutItem;
+  FrameCount: Integer;
 begin
   sr := Nil;
+  FrameCount := 0;
   try
     if FileExists(AFilename) then
       begin
@@ -146,6 +164,8 @@ begin
             if I = 1 then
               Continue;
             Rec := ParseCSV(s, I);
+            Rec.FirstFrame := FrameCount;
+            FrameCount := FrameCount + Rec.Frames;
             FLayout.Add(Rec);
           end;
       end;
@@ -261,7 +281,7 @@ begin
           0: OutRec.Action := NormalizeAction(TempText);
           1: OutRec.Frames := StrToIntDef(Temptext, -1);
           2: OutRec.ActionType := ActionSetFromString(TempText);
-          3: OutRec.ActionFrrames := StrToIntDef(Temptext, -1);
+          3: OutRec.ActionFrames := StrToIntDef(Temptext, -1);
           4: OutRec.ActionDirections := StrToIntDef(Temptext, -1);
         else
           raise Exception.Create('Fieldnum count overflow');
@@ -282,7 +302,7 @@ begin
       0: OutRec.Action := NormalizeAction(TempText);
       1: OutRec.Frames := StrToIntDef(Temptext, -1);
       2: OutRec.ActionType := ActionSetFromString(TempText);
-      3: OutRec.ActionFrrames := StrToIntDef(Temptext, -1);
+      3: OutRec.ActionFrames := StrToIntDef(Temptext, -1);
       4: OutRec.ActionDirections := StrToIntDef(Temptext, -1);
     else
       raise Exception.Create('Fieldnum count overflow');
@@ -476,5 +496,35 @@ begin
 
     Result := OutRec;
 end;
+
+procedure LoadLayouts();
+var
+  Layout: TSheetLayout;
+begin
+  if(not Assigned(SheetLayouts)) then
+    begin
+      SheetLayouts := TSheetLayoutDict.Create([doOwnsValues]);
+
+      Layout := TSheetLayout.Create(TSheetFormat.Character);
+      Layout.ImportLayoutCSV(LayoutDir + 'character.csv');
+      SheetLayouts.Add(TSheetFormat.Character, Layout);
+
+      Layout := TSheetLayout.Create(TSheetFormat.Monster);
+      Layout.ImportLayoutCSV(LayoutDir + 'monster.csv');
+      SheetLayouts.Add(TSheetFormat.Monster, Layout);
+    end;
+end;
+
+procedure UnLoadLayouts();
+begin
+  if(Assigned(SheetLayouts)) then
+    SheetLayouts.Free;
+end;
+
+initialization
+  LoadLayouts();
+
+finalization
+  UnLoadLayouts();
 
 end.
