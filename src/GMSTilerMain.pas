@@ -44,7 +44,7 @@ type
     procedure Button3Click(Sender: TObject);
   private
     DoneLayerSize: Boolean;
-    Images: TObjectList<TCompositeImage>;
+    Images: TObjectList<TSpriteSheet>;
     FDrawProc: TSkDrawProc;
     procedure CompositeToBitmap(const AWidth, AHeight: Integer; const ADrawProc: TSkDrawProc);
     procedure AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const SpriteSizeX: Integer; const SpriteSizeY: Integer; const FrameCount: Integer);
@@ -94,9 +94,9 @@ uses
 
 procedure TForm1.AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const SpriteSizeX: Integer; const SpriteSizeY: Integer; const FrameCount: Integer);
 var
-  CI: TCompositeImage;
+  CI: TSpriteSheet;
 begin
-  CI := TCompositeImage.Create;
+  CI := TSpriteSheet.Create;
   if(Ci.LoadSheet(ASheetFormat, AFilename, Layer, SpriteSizeX, SpriteSizeY, FrameCount)) then
     begin
       Images.Add(CI);
@@ -107,8 +107,31 @@ begin
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
+var
+  Layout: TSheetLayout;
+  Direction: TDirectionLayout;
 begin
   Memo1.Lines.Clear;
+
+  if(Assigned(SheetLayouts)) then
+    begin
+      if(SheetLayouts.TryGetValue(TSheetFormat.Character, Layout)) then
+        begin
+          Memo1.Lines.Add(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
+          Memo1.Lines.Add(Layout.Dump);
+        end;
+      if(SheetLayouts.TryGetValue(TSheetFormat.Monster, Layout)) then
+        begin
+          Memo1.Lines.Add(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
+          Memo1.Lines.Add(Layout.Dump);
+        end;
+    end;
+  if(Assigned(DirectionLayouts)) then
+    begin
+      if(DirectionLayouts.TryGetValue(TDirectionFormat.Directions8, Direction)) then
+        Memo1.Lines.Add(Direction.Dump);
+    end;
+
   DoneLayerSize := False;
   Images.Clear;
   TestLoad();
@@ -146,32 +169,10 @@ begin
 end;
 
 procedure TForm1.MenuItem2Click(Sender: TObject);
-
 var
-//  fl: TFileDirectoryList;
-//  gid: Integer;
-
-//  sl: TSheetLayout;
-  dl: TDirectionLayout;
-
+  fl: TFileDirectoryList;
+  gid: Integer;
 begin
-
-  dl := TDirectionLayout.Create;
-  dl.ImportLayoutCSV(BaseDir + 'dirs.csv');
-  Memo1.Lines.Add(dl.Dump);
-  dl.Free;
-{
-  sl := TSheetLayout.Create(TSheetFormat.Character);
-  sl.ImportLayoutCSV(BaseDir + 'character.csv');
-  Memo1.Lines.Add(sl.Dump);
-  sl.Free;
-
-  sl := TSheetLayout.Create(TSheetFormat.Monster);
-  sl.ImportLayoutCSV(BaseDir + 'monster.csv');
-  Memo1.Lines.Add(sl.Dump);
-  sl.Free;
-
-
   fl := TFileDirectoryList.Create;
   gid := 0;
   ScanFiles(BaseDir + SheetDir + '../..',
@@ -181,7 +182,6 @@ begin
    gid,
    DebugMessage);
    fl.free;
-   }
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
@@ -231,7 +231,7 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  Images := TObjectList<TCompositeImage>.Create;
+  Images := TObjectList<TSpriteSheet>.Create;
   FDrawProc := PaintComposite;
   // TestLoad();
 end;

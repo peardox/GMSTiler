@@ -10,6 +10,7 @@ type
   TActionType = (Loop, Singular, PingPong, UnAnimated, NeedsEdit, Offset);
   TActionTypeSet = Set of TActionType;
   TSheetFormat = (Character, Monster);
+  TDirectionFormat = (Directions8);
 
   TSheetLayoutItem = class
   strict private
@@ -33,6 +34,9 @@ type
   strict private
     FLayout: TObjectList<TSheetLayoutItem>;
     FFormat: TSheetFormat;
+    FColCount: Integer;
+    FRowCount: Integer;
+    FFrameCount: Integer;
     function ParseCSV(const S: String; const Linenum: Integer = 0): TSheetLayoutItem;
     function ActionSetFromString(const s: String): TActionTypeSet;
     function NormalizeAction(const S: String): String;
@@ -43,6 +47,10 @@ type
     procedure Clear;
     function Dump: String;
     property Items: TObjectList<TSheetLayoutItem> read FLayout write FLayout;
+    property Format: TSheetFormat read FFormat;
+    property ColCount: Integer read FColCount write FColCount;
+    property RowCount: Integer read FRowCount write FRowCount;
+    property FrameCount: Integer read FFrameCount write FFrameCount;
   end;
 
   TDirectionLayoutItem = class
@@ -70,9 +78,11 @@ type
   end;
 
   TSheetLayoutDict = TObjectDictionary<TSheetFormat, TSheetLayout>;
+  TDirectionLayoutDict = TObjectDictionary<TDirectionFormat, TDirectionLayout>;
 
 var
   SheetLayouts: TSheetLayoutDict;
+  DirectionLayouts: TDirectionLayoutDict;
 
 const
 {$IF DEFINED(MSWINDOWS)}
@@ -132,7 +142,7 @@ begin
     begin
       R := Flayout[I];
       Result := Result +
-                Format('%2d - %-20s - %4d - %2d - %2d - %2d' + sLineBreak, [
+                System.SysUtils.Format('%2d - %-20s - %4d - %2d - %2d - %2d' + sLineBreak, [
                   I, R.Action, R.FirstFrame, R.Frames, R.ActionFrames, R.ActionDirections
                   ]);
     end;
@@ -366,7 +376,7 @@ begin
     begin
       R := Flayout[I];
       Result := Result +
-                Format('%2d - %-4s - %-12s - %3d' + sLineBreak, [
+                System.SysUtils.Format('%2d - %-4s - %-12s - %3d' + sLineBreak, [
                   I, R.CompassShort, R.CompassLong, R.CompassAngle
                   ]);
     end;
@@ -500,6 +510,7 @@ end;
 procedure LoadLayouts();
 var
   Layout: TSheetLayout;
+  Directions: TDirectionLayout;
 begin
   if(not Assigned(SheetLayouts)) then
     begin
@@ -507,16 +518,29 @@ begin
 
       Layout := TSheetLayout.Create(TSheetFormat.Character);
       Layout.ImportLayoutCSV(LayoutDir + 'character.csv');
+      Layout.ColCount := 50;
+      Layout.RowCount := 50;
+      Layout.FrameCount := 2496;
       SheetLayouts.Add(TSheetFormat.Character, Layout);
 
       Layout := TSheetLayout.Create(TSheetFormat.Monster);
       Layout.ImportLayoutCSV(LayoutDir + 'monster.csv');
+      Layout.ColCount := 21;
+      Layout.RowCount := 21;
+      Layout.FrameCount := 440;
       SheetLayouts.Add(TSheetFormat.Monster, Layout);
+
+      DirectionLayouts := TDirectionLayoutDict.Create([doOwnsValues]);
+      Directions := TDirectionLayout.Create;
+      Directions.ImportLayoutCSV(LayoutDir + 'dirs.csv');
+      DirectionLayouts.Add(TDirectionFormat.Directions8, Directions);
     end;
 end;
 
 procedure UnLoadLayouts();
 begin
+  if(Assigned(DirectionLayouts)) then
+    DirectionLayouts.Free;
   if(Assigned(SheetLayouts)) then
     SheetLayouts.Free;
 end;

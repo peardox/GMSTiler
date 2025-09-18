@@ -22,7 +22,7 @@ type
     property IsEmpty: Boolean read FIsEmpty;
   end;
 
-  TCompositeImage = class
+  TSpriteSheet = class
   strict private
     FSprite: ISkImage;
     FSprites: TObjectList<TActionSprite>;
@@ -52,7 +52,7 @@ type
 
   TCompositeSheet = class
   strict private
-    FSheets: TObjectList<TCompositeImage>;
+    FSheets: TObjectList<TSpriteSheet>;
     FFrameSizeX: Integer;
     FFrameSizeY: Integer;
     FFrames: Integer;
@@ -72,21 +72,21 @@ implementation
 uses
   TileUtils;
 
-{ TCompositeImage }
+{ TSpriteSheet }
 
-constructor TCompositeImage.Create;
+constructor TSpriteSheet.Create;
 begin
     FSprites := TObjectList<TActionSprite>.Create;
 end;
 
-destructor TCompositeImage.Destroy;
+destructor TSpriteSheet.Destroy;
 begin
   if(Assigned(FSprites)) then
     FSprites.Free;
   inherited;
 end;
 
-function TCompositeImage.LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const SpriteSizeX: Integer; const SpriteSizeY: Integer; const FrameCount: Integer): Boolean;
+function TSpriteSheet.LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const SpriteSizeX: Integer; const SpriteSizeY: Integer; const FrameCount: Integer): Boolean;
 var
   LPaint: ISkPaint;
   LSurface: ISkSurface;
@@ -215,7 +215,7 @@ end;
 constructor TCompositeSheet.Create(const AFormat: TSheetFormat;
   const ASpriteSizeX, ASpriteSizeY, AFrameCount: Integer);
 begin
-    FSheets := TObjectList<TCompositeImage>.Create;
+    FSheets := TObjectList<TSpriteSheet>.Create;
     FFrameSizeX := ASpriteSizeX;
     FFrameSizeY := ASpriteSizeY;
     FFrames := AFrameCount;
