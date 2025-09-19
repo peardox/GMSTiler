@@ -12,7 +12,7 @@ type
     Scale: Single;
     Offset: TPointF;
   End;
-  TDebugProc = procedure(const AMsg: String) of object;
+//  TDebugProc = procedure(const AMsg: String) of object;
 
   TFileDirectory = class
   private
@@ -41,7 +41,7 @@ function GetBoundingRect(SubRect: TRect; Pixels: ISkPixmap; const AAlphaThreshol
 function GetLayerRect(NewRect: TRect; BoundRect: TRect): TRect;
 function EncloseRect(ARect: TRect; Border: Integer = 0): TRect;
 function EncloseRectF(ARect: TRect; Border: Integer = 0): TRectF;
-procedure ScanFiles(const ADir: String; const ASubDir: String; const AFileExt: TArray<String>; var AList: TObjectList<TFileDirectory>; var GroupID: Integer; const Debug: TDebugProc = Nil);
+procedure ScanFiles(const ADir: String; const ASubDir: String; const AFileExt: TArray<String>; var AList: TObjectList<TFileDirectory>; var GroupID: Integer);
 function SheetRemap(const SpriteIndex: Integer; const SpriteCount: Integer; const SheetSizeX: Integer; const SheetSizeY: Integer): TRectArray;
 procedure GrabSprite(LSurface: ISkSurface; const AFilename: String);
 function IsSpriteEmpty(Pixels: ISkSurface; const AAlphaThreshold: Single = 0): Boolean; overload;
@@ -50,7 +50,7 @@ function IsSpriteEmpty(Pixels: ISkPixmap; const AAlphaThreshold: Single = 0): Bo
 
 implementation
 
-uses Math, System.Hash, FMX.Graphics;
+uses Math, System.Hash, FMX.Graphics, GMSimpleLog;
 
 constructor TFileDirectory.Create(const AParentDir: String; ASubDir,
   AFileName: String; AGroupID: Integer);
@@ -280,7 +280,7 @@ begin
   Result := Rect(ARect.Left - Border, ARect.Top - Border, ARect.Right + Border, ARect.Bottom + Border);
 end;
 
-procedure ScanFiles(const ADir: String; const ASubDir: String; const AFileExt: TArray<String>; var AList: TObjectList<TFileDirectory>; var GroupID: Integer; const Debug: TDebugProc);
+procedure ScanFiles(const ADir: String; const ASubDir: String; const AFileExt: TArray<String>; var AList: TObjectList<TFileDirectory>; var GroupID: Integer);
 var
   sr: TSearchRec;
   FileAttrs: Integer;
@@ -328,9 +328,7 @@ begin
                     else
                       DirItem := TFileDirectory.Create(ADir, ASubDir, sr.Name, GroupID);
                     AList.Add(DirItem);
-                    if Assigned(Debug) then
-                      Debug(Format('%5d - %03d - %s - %s', [AList.Count, DirItem.GroupID, DirItem.SubDir, DirItem.FileName]));
-                    break;
+                    GMSLog(Format('%5d - %03d - %s - %s', [AList.Count, DirItem.GroupID, DirItem.SubDir, DirItem.FileName]));
                   end;
               end;
           end
@@ -339,9 +337,9 @@ begin
             if (sr.Name <> '.') and (sr.Name <> '..')  then
               begin
                 if ASubDir = String.Empty then
-                  ScanFiles(ADir, sr.Name, AFileExt, AList, GroupID, Debug)
+                  ScanFiles(ADir, sr.Name, AFileExt, AList, GroupID)
                 else
-                  ScanFiles(ADir, ASubDir + TPath.DirectorySeparatorChar + sr.Name, AFileExt, AList, GroupID, Debug);
+                  ScanFiles(ADir, ASubDir + TPath.DirectorySeparatorChar + sr.Name, AFileExt, AList, GroupID);
               end;
           end
       end;

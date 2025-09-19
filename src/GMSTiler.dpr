@@ -8,7 +8,7 @@ uses
   LayoutCSV in 'LayoutCSV.pas',
   TileUtils in 'TileUtils.pas',
   SpriteAtlas in 'SpriteAtlas.pas',
-  SimpleLog in 'SimpleLog.pas';
+  GMSimpleLog in 'GMSimpleLog.pas';
 
 {$R *.res}
 

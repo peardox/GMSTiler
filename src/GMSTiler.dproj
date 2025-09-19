@@ -314,7 +314,7 @@
         <DCCReference Include="LayoutCSV.pas"/>
         <DCCReference Include="TileUtils.pas"/>
         <DCCReference Include="SpriteAtlas.pas"/>
-        <DCCReference Include="SimpleLog.pas"/>
+        <DCCReference Include="GMSimpleLog.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

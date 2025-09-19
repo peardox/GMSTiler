@@ -91,7 +91,7 @@ implementation
 
 uses
   Math, FMX.Skia.Canvas, TileUtils,
-  DateUtils, SimpleLog;
+  DateUtils, GMSimpleLog;
 
 procedure TForm1.AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String);
 var
@@ -101,10 +101,10 @@ begin
   if(Ci.LoadSheet(ASheetFormat, AFilename, Layer)) then
     begin
       Images.Add(CI);
-      Log(Format('%s - %s',[AFilename, SHAFile(AFilename)]));
+      GMSLog(Format('%s - %s',[AFilename, SHAFile(AFilename)]));
     end
   else
-    Log('Failed : ' + AFilename);
+    GMSLog('Failed : ' + AFilename);
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
@@ -118,19 +118,19 @@ begin
     begin
       if(SheetLayouts.TryGetValue(TSheetFormat.Character, Layout)) then
         begin
-          Log(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
-          Log(Layout.Dump);
+          GMSLog(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
+          GMSLog(Layout.Dump);
         end;
       if(SheetLayouts.TryGetValue(TSheetFormat.Monster, Layout)) then
         begin
-          Log(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
-          Log(Layout.Dump);
+          GMSLog(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
+          GMSLog(Layout.Dump);
         end;
     end;
   if(Assigned(DirectionLayouts)) then
     begin
       if(DirectionLayouts.TryGetValue(TDirectionFormat.Directions8, Direction)) then
-        Log(Direction.Dump);
+        GMSLog(Direction.Dump);
     end;
 
   DoneLayerSize := False;
@@ -164,7 +164,7 @@ begin
 
 
   elapsed := DateUtils.MilliSecondsBetween(Now, from);
-  Log(Format('Load Time : %1.3f',[Single(elapsed / 1000)]));
+  GMSLog(Format('Load Time : %1.3f',[Single(elapsed / 1000)]));
 
   LayoutLayer.RePaint;
 end;
@@ -176,12 +176,11 @@ var
 begin
   fl := TFileDirectoryList.Create;
   gid := 0;
-  ScanFiles(BaseDir + SheetDir + '../..',
+  ScanFiles(BaseDir + SheetDir + '..',
    '',
    ['.png'],
    fl,
-   gid,
-   DebugMessage);
+   gid);
    fl.free;
 end;
 
@@ -222,7 +221,7 @@ end;
 
 procedure TForm1.DebugMessage(const AMsg: String);
 begin
-  Log(AMsg);
+  GMSLog(AMsg);
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -232,7 +231,7 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  Log := LogMemo;
+  GMSLog := LogMemo;
   TabControl1.ActiveTab := TabItem1;
   Images := TObjectList<TSpriteSheet>.Create;
   FDrawProc := PaintComposite;
@@ -241,7 +240,7 @@ end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
 begin
-  Log := NullLogger;
+  GMSLog := GMSNullLogger;
 end;
 
 procedure TForm1.PaintComposite(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
