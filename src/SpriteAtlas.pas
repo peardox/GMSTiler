@@ -24,7 +24,6 @@ type
 
   TSpriteSheet = class
   strict private
-    FSprite: ISkImage;
     FSprites: TObjectList<TActionSprite>;
     FSizeX: Integer;
     FSizeY: Integer;
@@ -37,8 +36,7 @@ type
   public
     constructor Create;
     destructor Destroy(); override;
-    function LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const SpriteSizeX: Integer; const SpriteSizeY: Integer; const FrameCount: Integer): Boolean;
-    property Sprite: ISkImage read FSprite write FSprite;
+    function LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String): Boolean;
     property SizeX: Integer read FSizeX write FSizeX;
     property SizeY: Integer read FSizeY write FSizeY;
     property FrameSizeX: Integer read FFrameSizeX write FFrameSizeX;
@@ -70,7 +68,7 @@ type
 implementation
 
 uses
-  TileUtils;
+  FMX.Skia, FMX.Graphics, TileUtils;
 
 { TSpriteSheet }
 
@@ -86,11 +84,13 @@ begin
   inherited;
 end;
 
-function TSpriteSheet.LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const SpriteSizeX: Integer; const SpriteSizeY: Integer; const FrameCount: Integer): Boolean;
+function TSpriteSheet.LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String): Boolean;
 var
   LPaint: ISkPaint;
   LSurface: ISkSurface;
   LImage: ISkImage;
+  LSprite: ISkImage;
+//  LBitmap: TBitmap;
   I: Integer;
   Spr: Integer;
   Layout: TSheetLayout;
@@ -103,6 +103,10 @@ var
 {$IF DEFINED(IMAGELOADUSESTREAM)}
   LStream: TMemoryStream;
 {$ENDIF}
+procedure ShowImageDraw(const ASurface: ISkSurface; const AImage: ISkImage; const src: TRectF; const dst: TRectF; const APaint: ISkPaint);
+begin
+  ASurface.Canvas.DrawImageRect(AImage, src, dst, APaint);
+end;
 begin
   Result := False;
   FSheetFormat := ASheetFormat;
@@ -118,7 +122,6 @@ begin
   else
     Raise Exception.CreateFmt('Couldn''t find Layout for %s', [AFilename]);
 
-
 {$IF DEFINED(IMAGELOADUSESTREAM)}
   LStream := TMemoryStream.Create;
   try
@@ -128,27 +131,37 @@ begin
     LStream.Free;
   end;
 {$ELSE}
+//  LBitmap := TBitmap.Create;
+  try
+//  LBitmap.LoadFromFile(AFilename);
+
   LImage := TSkImage.MakeFromEncodedFile(AFilename);
+//  LImage := BitmapToSkImage(LBitmap); //.MakeFromEncodedFile(AFilename);
 {$ENDIF}
-  FFrameSizeX := SpriteSizeX;
-  FFrameSizeY := SpriteSizeX;
   FSizeX := LImage.Width;
   FSizeY := LImage.Height;
 
   if((FSizeX = 0) or (FSizeY = 0)) then
-    Raise Exception.CreateFmt('Empty FrameSize for %s', [AFilename]);
+    Raise Exception.CreateFmt('Empty Image : %s', [AFilename]);
 
-  if((FSizeX mod FFrameSizeX) <> 0) then
-    Raise Exception.CreateFmt('Suspect FrameSize for %s', [AFilename]);
+  if((FSizeX mod Layout.ColCount) <> 0) then
+    Raise Exception.CreateFmt('Fractional FrameSize : %s', [AFilename]);
 
-  if((FSizeY mod FFrameSizeY) <> 0) then
-    Raise Exception.CreateFmt('Suspect FrameSize for %s', [AFilename]);
+  if((FSizeY mod Layout.RowCount) <> 0) then
+    Raise Exception.CreateFmt('Fractional FrameSize : %s', [AFilename]);
 
   FFormat := TImageFormat.Sheet;
-  FFrames := (FSizeX div FFrameSizeX) * (FSizeY div FFrameSizeY);
-  FSpareFrames := FFrames - FrameCount;
+
+  FFrameSizeX := FSizeX div Layout.ColCount;
+  FFrameSizeY := FSizeX div Layout.RowCount;
+
+
+  FFrames := Layout.ColCount * Layout.RowCount;
+  FSpareFrames := FFrames - Layout.FrameCount;
   if (FSpareFrames < 0) then
-    Raise Exception.CreateFmt('Suspect SpareFrames for %s', [AFilename]);
+    Raise Exception.CreateFmt('Suspect SpareFrames : %s', [AFilename]);
+  if (FSpareFrames >= Layout.ColCount) then
+    Raise Exception.CreateFmt('Suspect Empty Frame Row : %s', [AFilename]);
 
 {$IFDEF TESTSPRITE}
   if(not DirectoryExists('sprites')) then
@@ -156,7 +169,6 @@ begin
   if(not DirectoryExists('sprites/'+Layer)) then
     mkdir('sprites/'+Layer);
 {$ENDIF}
-
   // Deconstruct SpriteSheet into SpriteRuns
   LPaint := TSkPaint.Create;
   FSprites.Clear;
@@ -167,12 +179,13 @@ begin
       for SprDir := 0 to Layout.Items[Spr].ActionDirections - 1 do
         begin
           LSurface := TSkSurface.MakeRaster(SprFrames * FFrameSizeX, FFrameSizeY);
-          LSurface.Canvas.Clear(TAlphaColors.Null);
-          Split := SheetRemap(Layout.Items[Spr].FirstFrame + (SprDir * SprFrames), SprFrames, 50, 50); // = 46,44
+         // LSurface.Canvas.Clear(TAlphaColors.Null);
+          Split := SheetRemap(Layout.Items[Spr].FirstFrame + (SprDir * SprFrames), SprFrames, Layout.ColCount, Layout.RowCount); // = 46,44
           DestX := 0;
           for I := 0 to Length(Split) - 1 do
             begin
-              LSurface.Canvas.DrawImageRect(
+//              LSurface.Canvas.DrawImageRect(
+              ShowImageDraw(LSurface,
                 LImage,                          // 2344
                 RectF(Split[I].Left * FFrameSizeX, Split[I].Top * FFrameSizeY,
                      (Split[I].Left * FFrameSizeX) + (Split[I].Width * FFrameSizeX) - 1, (Split[I].Bottom * FFrameSizeY) - 1),
@@ -186,10 +199,9 @@ begin
           if(bound.IsEmpty) then
             Raise Exception.CreateFmt('Empty Image for %s', [AFilename]);
         }
-          Sprite := LSurface.MakeImageSnapshot;
-          Action := TActionSprite.Create(Sprite, IsSpriteEmpty(Sprite));
+          LSprite := LSurface.MakeImageSnapshot;
+          Action := TActionSprite.Create(LSprite, IsSpriteEmpty(LSprite));
           FSprites.Add(Action);
-
 {$IFDEF TESTSPRITE}
           if(not Action.IsEmpty) then
             GrabSprite(LSurface, 'sprites/'+ Layer + '/' + Layout.Items[Spr].Action + '_dir' + IntToStr(SprDir) + '_strip'  + IntToStr(SprFrames) + '.png');
@@ -199,6 +211,10 @@ begin
         //  Counter := Counter + 1;
         //  ADrawProc(LSurface.Canvas, RectF(0, 0, AWidth, AHeight));
         end;
+    end;
+
+    finally
+  //    LBitmap.Free;
     end;
 
 

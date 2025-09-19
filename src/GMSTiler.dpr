@@ -7,7 +7,8 @@ uses
   GMSTilerMain in 'GMSTilerMain.pas' {Form1},
   LayoutCSV in 'LayoutCSV.pas',
   TileUtils in 'TileUtils.pas',
-  SpriteAtlas in 'SpriteAtlas.pas';
+  SpriteAtlas in 'SpriteAtlas.pas',
+  SimpleLog in 'SimpleLog.pas';
 
 {$R *.res}
 

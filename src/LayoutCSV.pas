@@ -29,14 +29,30 @@ type
     property ActionDirections: Integer read FActionDirections write FActionDirections;
   end;
 
+  TSheetSpec = class
+  strict private
+    FFilename: String;
+    FColCount: Integer;
+    FRowCount: Integer;
+    FFrameCount: Integer;
+    FSpareCount: Integer;
+  public
+    property Filename: String read FFilename write FFilename;
+    property ColCount: Integer read FColCount write FColCount;
+    property RowCount: Integer read FRowCount write FRowCount;
+    property FrameCount: Integer read FFrameCount write FFrameCount;
+    property SpareCount: Integer read FSpareCount write FSpareCount;
+  end;
 
   TSheetLayout = class
   strict private
     FLayout: TObjectList<TSheetLayoutItem>;
     FFormat: TSheetFormat;
+    FFilename: String;
     FColCount: Integer;
     FRowCount: Integer;
     FFrameCount: Integer;
+    FSpareCount: Integer;
     function ParseCSV(const S: String; const Linenum: Integer = 0): TSheetLayoutItem;
     function ActionSetFromString(const s: String): TActionTypeSet;
     function NormalizeAction(const S: String): String;
@@ -48,9 +64,11 @@ type
     function Dump: String;
     property Items: TObjectList<TSheetLayoutItem> read FLayout write FLayout;
     property Format: TSheetFormat read FFormat;
+    property Filename: String read FFilename write FFilename;
     property ColCount: Integer read FColCount write FColCount;
     property RowCount: Integer read FRowCount write FRowCount;
     property FrameCount: Integer read FFrameCount write FFrameCount;
+    property SpareCount: Integer read FSpareCount write FSpareCount;
   end;
 
   TDirectionLayoutItem = class
@@ -128,7 +146,8 @@ end;
 
 destructor TSheetLayout.Destroy;
 begin
-  FLayout.Free;
+  if(Assigned(FLayout)) then
+    FLayout.Free;
   inherited;
 end;
 
@@ -521,6 +540,7 @@ begin
       Layout.ColCount := 50;
       Layout.RowCount := 50;
       Layout.FrameCount := 2496;
+      Layout.SpareCount := 4;
       SheetLayouts.Add(TSheetFormat.Character, Layout);
 
       Layout := TSheetLayout.Create(TSheetFormat.Monster);
@@ -528,6 +548,7 @@ begin
       Layout.ColCount := 21;
       Layout.RowCount := 21;
       Layout.FrameCount := 440;
+      Layout.SpareCount := 1;
       SheetLayouts.Add(TSheetFormat.Monster, Layout);
 
       DirectionLayouts := TDirectionLayoutDict.Create([doOwnsValues]);

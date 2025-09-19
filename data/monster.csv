@@ -1,4 +1,4 @@
-"action",           "frames",     "atype", "aframe", "adirs"
+Spritesheet.png
 "walk",                   64,         "L",        8,       8
 "run",                    64,         "L",        8,       8
 "idle",                   40,         "L",        5,       8
@@ -13,5 +13,3 @@
 "down",                   24,         "S",        3,       8
 "down poses",             32,         "U",        4,       8
 "behaviour",              24,         "P",        3,       8
-
-

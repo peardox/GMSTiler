@@ -13,8 +13,7 @@ uses
   LayoutCSV, SpriteAtlas;
 
 type
-  TSkDrawProc = reference to procedure(const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
-  TLayerPaintProc =  reference to procedure(const ACanvas: ISkCanvas; const ADest: TRectF; const Image: ISkImage);
+  TSkDrawProc = reference to procedure(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
 
   TForm1 = class(TForm)
     Layout1: TLayout;
@@ -31,7 +30,7 @@ type
     Layout4: TLayout;
     LayoutLayer: TLayout;
     TabItem2: TTabItem;
-    Memo1: TMemo;
+    mmLog: TMemo;
     Layout2: TLayout;
     Button3: TButton;
     procedure Button1Click(Sender: TObject);
@@ -42,15 +41,17 @@ type
     procedure LayoutLayerPaint(Sender: TObject; Canvas: TCanvas;
       const ARect: TRectF);
     procedure Button3Click(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
   private
     DoneLayerSize: Boolean;
     Images: TObjectList<TSpriteSheet>;
     FDrawProc: TSkDrawProc;
     procedure CompositeToBitmap(const AWidth, AHeight: Integer; const ADrawProc: TSkDrawProc);
-    procedure AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const SpriteSizeX: Integer; const SpriteSizeY: Integer; const FrameCount: Integer);
+    procedure AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String);
     procedure TestLoad;
     procedure DebugMessage(const AMsg: String);
-    procedure PaintComposite(const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
+    procedure PaintComposite(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
+    procedure LogMemo(s: String);
     { Private declarations }
   public
     { Public declarations }
@@ -90,20 +91,20 @@ implementation
 
 uses
   Math, FMX.Skia.Canvas, TileUtils,
-  DateUtils;
+  DateUtils, SimpleLog;
 
-procedure TForm1.AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const SpriteSizeX: Integer; const SpriteSizeY: Integer; const FrameCount: Integer);
+procedure TForm1.AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String);
 var
   CI: TSpriteSheet;
 begin
   CI := TSpriteSheet.Create;
-  if(Ci.LoadSheet(ASheetFormat, AFilename, Layer, SpriteSizeX, SpriteSizeY, FrameCount)) then
+  if(Ci.LoadSheet(ASheetFormat, AFilename, Layer)) then
     begin
       Images.Add(CI);
-      Memo1.Lines.Add(Format('%s - %s',[AFilename, SHAFile(AFilename)]));
+      Log(Format('%s - %s',[AFilename, SHAFile(AFilename)]));
     end
   else
-    Memo1.Lines.Add('Failed : ' + AFilename);
+    Log('Failed : ' + AFilename);
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
@@ -111,25 +112,25 @@ var
   Layout: TSheetLayout;
   Direction: TDirectionLayout;
 begin
-  Memo1.Lines.Clear;
+  mmLog.Lines.Clear;
 
   if(Assigned(SheetLayouts)) then
     begin
       if(SheetLayouts.TryGetValue(TSheetFormat.Character, Layout)) then
         begin
-          Memo1.Lines.Add(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
-          Memo1.Lines.Add(Layout.Dump);
+          Log(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
+          Log(Layout.Dump);
         end;
       if(SheetLayouts.TryGetValue(TSheetFormat.Monster, Layout)) then
         begin
-          Memo1.Lines.Add(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
-          Memo1.Lines.Add(Layout.Dump);
+          Log(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
+          Log(Layout.Dump);
         end;
     end;
   if(Assigned(DirectionLayouts)) then
     begin
       if(DirectionLayouts.TryGetValue(TDirectionFormat.Directions8, Direction)) then
-        Memo1.Lines.Add(Direction.Dump);
+        Log(Direction.Dump);
     end;
 
   DoneLayerSize := False;
@@ -144,26 +145,26 @@ var
 begin
   from := Now;
   {$IF DEFINED(USECHARATER)}
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Shadow/Spritesheet.png', 'shadow', 200, 200, 2496);
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Base/RTP_1/Spritesheet.png', 'base', 200, 200, 2496);
+  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Shadow/Spritesheet.png', 'shadow');
+  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Base/RTP_1/Spritesheet.png', 'base');
 
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Top/RTP_1/Spritesheet.png', 'top', 200, 200, 2496);
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Bottom/RTP_1/Spritesheet.png', 'bottom', 200, 200, 2496);
+  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Top/RTP_1/Spritesheet.png', 'top');
+  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Bottom/RTP_1/Spritesheet.png', 'bottom');
 
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Hair/RTP_1/Spritesheet.png', 'hair', 200, 200, 2496);
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Head/RTP_1/Spritesheet.png', 'head', 200, 200, 2496);
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'FacialHair/RTP_1/Spritesheet.png', 'facial_hair', 200, 200, 2496);
-//  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Xbow/Spritesheet.png', 'xbow', 200, 200, 2496);
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Sword/Spritesheet.png', 'sword', 200, 200, 2496);
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Shield/Spritesheet.png', 'shield', 200, 200, 2496);
+  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Hair/RTP_1/Spritesheet.png', 'hair');
+  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Head/RTP_1/Spritesheet.png', 'head');
+  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'FacialHair/RTP_1/Spritesheet.png', 'facial_hair');
+//  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Xbow/Spritesheet.png', 'xbow');
+  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Sword/Spritesheet.png', 'sword');
+  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Shield/Spritesheet.png', 'shield');
   {$ELSE}
-  AddImage(TSheetFormat.Monster, BaseDir + SheetDir + 'Spritesheet_Shadow.png', 'shadow', 800, 800, 440);
-  AddImage(TSheetFormat.Monster, BaseDir + SheetDir + 'Spritesheet.png', 'monster', 800, 800, 440);
+  AddImage(TSheetFormat.Monster, BaseDir + SheetDir + 'Spritesheet_Shadow.png', 'shadow');
+  AddImage(TSheetFormat.Monster, BaseDir + SheetDir + 'Spritesheet.png', 'monster');
   {$ENDIF}
 
 
   elapsed := DateUtils.MilliSecondsBetween(Now, from);
-  Memo1.Lines.Add(Format('Load Time : %1.3f',[Single(elapsed / 1000)]));
+  Log(Format('Load Time : %1.3f',[Single(elapsed / 1000)]));
 
   LayoutLayer.RePaint;
 end;
@@ -192,7 +193,7 @@ end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-  Memo1.Lines.Clear;
+  mmLog.Lines.Clear;
 end;
 
 procedure TForm1.CompositeToBitmap(const AWidth, AHeight: Integer;
@@ -204,7 +205,7 @@ begin
     begin
       LSurface := TSkSurface.MakeRaster(AWidth, AHeight);
       LSurface.Canvas.Clear(TAlphaColors.Null);
-      ADrawProc(LSurface.Canvas, RectF(0, 0, AWidth, AHeight), RectF(0, 0, AWidth, AHeight));
+      ADrawProc(10, LSurface.Canvas, RectF(0, 0, AWidth, AHeight), RectF(0, 0, AWidth, AHeight));
       {
       LStream := TMemoryStream.Create;
       LSurface.MakeImageSnapshot.EncodeToStream(LStream);
@@ -221,7 +222,7 @@ end;
 
 procedure TForm1.DebugMessage(const AMsg: String);
 begin
-  Memo1.Lines.Add(AMsg);
+  Log(AMsg);
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -231,12 +232,19 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
+  Log := LogMemo;
+  TabControl1.ActiveTab := TabItem1;
   Images := TObjectList<TSpriteSheet>.Create;
   FDrawProc := PaintComposite;
   // TestLoad();
 end;
 
-procedure TForm1.PaintComposite(const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
+procedure TForm1.FormDestroy(Sender: TObject);
+begin
+  Log := NullLogger;
+end;
+
+procedure TForm1.PaintComposite(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
 var
   LPaint: ISkPaint;
   I: Integer;
@@ -254,7 +262,7 @@ begin
   LPaint.AntiAlias := False;
   for I := 0 to Images.Count -1 do
     begin
-      if(Assigned(Images[I].Sprite)) then
+      if(Assigned(Images[I].Sprites[SpriteIndex].Sprite)) then
         begin
         {
           Bound := GetBoundingRect(SpriteRect, Images[I].Sprite.PeekPixels, 0);
@@ -269,7 +277,7 @@ begin
                 end;
             end;
           }
-          ACanvas.DrawImageRect(Images[I].Sprite, SpriteRect, RenderRect, LPaint);
+          ACanvas.DrawImageRect(Images[I].Sprites[SpriteIndex].Sprite, SpriteRect, RenderRect, LPaint);
         end;
     end;
 {
@@ -296,8 +304,13 @@ begin
   if Assigned(FDrawProc) then
     begin
       LCanvas := TSkCanvasCustom(Canvas).Canvas;
-      FDrawProc(LCanvas, ARect, Rect(0,0,200,200));
+      FDrawProc(10, LCanvas, ARect, Rect(0,0,200,200));
     end;
+end;
+
+procedure TForm1.LogMemo(s: String);
+begin
+  mmLog.Lines.Add(s);
 end;
 
 end.

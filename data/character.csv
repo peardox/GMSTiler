@@ -1,4 +1,4 @@
-"action",           "frames",     "atype", "aframe", "adirs"
+Spritesheet.png
 "walk",                   64,         "L",        8,       8
 "run",                    64,         "L",        8,       8
 "idle 1",                 40,         "L",        5,       8
@@ -68,6 +68,3 @@
 "xbow-Rifle idle",        40,         "L",        5,       8
 "xbow-Rifle attack 1",    24,         "S",        3,       8
 "xbow-Rifle fidget",      24,         "S",        3,       8
-
-
-
