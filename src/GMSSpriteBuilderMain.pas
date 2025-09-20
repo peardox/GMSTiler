@@ -1,4 +1,4 @@
-unit GMSTilerMain;
+unit GMSSpriteBuilderMain;
 
 interface
 {$DEFINE IMAGELOADUSESTREAM}
@@ -10,7 +10,8 @@ uses
   FMX.Skia, FMX.Layouts, FMX.Controls.Presentation, FMX.StdCtrls, FMX.Objects,
   System.Generics.Defaults, System.Generics.Collections, FMX.Menus, FMX.TreeView,
   FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.TabControl,
-  LayoutCSV, SpriteAtlas;
+  System.Math.Vectors, FMX.Controls3D, FMX.Layers3D,
+  LayoutCSV, SpriteAtlas, SkComponents;
 
 type
   TSkDrawProc = reference to procedure(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
@@ -33,6 +34,7 @@ type
     mmLog: TMemo;
     Layout2: TLayout;
     Button3: TButton;
+    fsbLayer: TFramedVertScrollBox;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -230,12 +232,28 @@ begin
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
+var
+  I: Integer;
+  bl: TBorderLayout;
+  test: TCircle;
 begin
   GMSLog := LogMemo;
   TabControl1.ActiveTab := TabItem1;
   Images := TObjectList<TSpriteSheet>.Create;
   FDrawProc := PaintComposite;
   // TestLoad();
+  for I := 0 to 8 do
+    begin
+      bl := TBorderLayout.Create(fsbLayer);
+      bl.Width := 100;
+      bl.Height := 100;
+      bl.Parent := fsbLayer;
+      bl.Align := TAlignLayout.Top;
+      fsbLayer.Content.AddObject(bl);
+      Test := TCircle.Create(bl);
+      Test.Align := TAlignLayout.Client;
+      Test.Parent := bl;
+    end;
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -248,7 +266,7 @@ var
   LPaint: ISkPaint;
   I: Integer;
   RenderRect: TRectF;
-//  Bound: TRect;
+  Bound: TRect;
   BoundRect: TRect;
   FitScale: TFitScale;
 begin
@@ -263,15 +281,16 @@ begin
     begin
       if(Assigned(Images[I].Sprites[SpriteIndex].Sprite)) then
         begin
-        {
-          Bound := GetBoundingRect(SpriteRect, Images[I].Sprite.PeekPixels, 0);
+          {
+          Bound := GetBoundingRect(SpriteRect, Images[I].Sprites[I].Sprite.PeekPixels, 0);
           BoundRect := GetLayerRect(Bound, BoundRect);
+
           if(not DoneLayerSize) then
             begin
-              Memo1.Lines.Add(Format('Bound #%d  (%4d x %4d)-(%4d x %4d) : (%4d x %4d)', [I, Bound.Left, Bound.Top, Bound.Right, Bound.Bottom, Bound.Width, Bound.Height]));
+              GMSLog(Format('Bound #%d  (%4d x %4d)-(%4d x %4d) : (%4d x %4d)', [I, Bound.Left, Bound.Top, Bound.Right, Bound.Bottom, Bound.Width, Bound.Height]));
               if(I = (Images.Count-1)) then
                 begin
-                  Memo1.Lines.Add(Format('Bound Max (%4d x %4d)-(%4d x %4d) : (%4d x %4d)', [BoundRect.Left, BoundRect.Top, BoundRect.Right, BoundRect.Bottom, BoundRect.Width, BoundRect.Height]));
+                  GMSLog(Format('Bound Max (%4d x %4d)-(%4d x %4d) : (%4d x %4d)', [BoundRect.Left, BoundRect.Top, BoundRect.Right, BoundRect.Bottom, BoundRect.Width, BoundRect.Height]));
                   DoneLayerSize := True;
                 end;
             end;
@@ -279,7 +298,7 @@ begin
           ACanvas.DrawImageRect(Images[I].Sprites[SpriteIndex].Sprite, SpriteRect, RenderRect, LPaint);
         end;
     end;
-{
+    {
     BoundRect := EncloseRect(BoundRect, 2);
     LPaint.Color := $FFFF0000;
     var tl, tr, bl, br: TPointF;
@@ -291,8 +310,12 @@ begin
     ACanvas.DrawLine(tl, bl, LPaint);
     ACanvas.DrawLine(tr, br, LPaint);
     ACanvas.DrawLine(bl, br, LPaint);
-}
-
+    }
+    LPaint.Color := $FFFF0000;
+    ACanvas.DrawLine(ADest.TopLeft, PointF(ADest.Right, ADest.Top), LPaint);
+    ACanvas.DrawLine(PointF(ADest.Left, ADest.Top+1), PointF(ADest.Left, ADest.Bottom-1), LPaint);
+    ACanvas.DrawLine(PointF(ADest.Right-1, ADest.Top+1), PointF(ADest.Right-1, ADest.Bottom-1), LPaint);
+    ACanvas.DrawLine(PointF(ADest.Left, ADest.Bottom-1), PointF(ADest.Right, ADest.Bottom-1), LPaint);
 end;
 
 procedure TForm1.LayoutLayerPaint(Sender: TObject; Canvas: TCanvas;

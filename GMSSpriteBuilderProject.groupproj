@@ -3,7 +3,7 @@
         <ProjectGuid>{8FEE01B8-69A5-4F9C-8FBB-3B6C65F871AA}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="src\GMSTiler.dproj">
+        <Projects Include="src\GMSSpriteBuilder.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -14,23 +14,23 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="GMSTiler">
-        <MSBuild Projects="src\GMSTiler.dproj"/>
+    <Target Name="GMSSpriteBuilder">
+        <MSBuild Projects="src\GMSSpriteBuilder.dproj"/>
     </Target>
-    <Target Name="GMSTiler:Clean">
-        <MSBuild Projects="src\GMSTiler.dproj" Targets="Clean"/>
+    <Target Name="GMSSpriteBuilder:Clean">
+        <MSBuild Projects="src\GMSSpriteBuilder.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="GMSTiler:Make">
-        <MSBuild Projects="src\GMSTiler.dproj" Targets="Make"/>
+    <Target Name="GMSSpriteBuilder:Make">
+        <MSBuild Projects="src\GMSSpriteBuilder.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="GMSTiler"/>
+        <CallTarget Targets="GMSSpriteBuilder"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="GMSTiler:Clean"/>
+        <CallTarget Targets="GMSSpriteBuilder:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="GMSTiler:Make"/>
+        <CallTarget Targets="GMSSpriteBuilder:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

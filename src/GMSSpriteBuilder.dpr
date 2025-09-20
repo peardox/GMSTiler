@@ -1,14 +1,15 @@
-program GMSTiler;
+program GMSSpriteBuilder;
 
 uses
   System.StartUpCopy,
   FMX.Forms,
   FMX.Skia,
-  GMSTilerMain in 'GMSTilerMain.pas' {Form1},
+  GMSSpriteBuilderMain in 'GMSSpriteBuilderMain.pas' {Form1},
   LayoutCSV in 'LayoutCSV.pas',
   TileUtils in 'TileUtils.pas',
   SpriteAtlas in 'SpriteAtlas.pas',
-  GMSimpleLog in 'GMSimpleLog.pas';
+  GMSimpleLog in 'GMSimpleLog.pas',
+  SkComponents in 'SkComponents.pas';
 
 {$R *.res}
 

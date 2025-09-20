@@ -38,6 +38,7 @@ function FitInsideContainer(const ARect: TRectF; const AContainer: TRectF): TRec
 function FitInsideContainer(const ARect: TRectF; const AContainer: TRectF; FitScale: TFitScale): TRectF; overload;
 function GetBoundingRect(Pixels: ISkPixmap; const AAlphaThreshold: Single = 0.0): TRect; overload;
 function GetBoundingRect(SubRect: TRect; Pixels: ISkPixmap; const AAlphaThreshold: Single = 0.0): TRect; overload;
+function GetBoundingRect(SubRect: TRectF; Pixels: ISkPixmap; const AAlphaThreshold: Single): TRect; overload;
 function GetLayerRect(NewRect: TRect; BoundRect: TRect): TRect;
 function EncloseRect(ARect: TRect; Border: Integer = 0): TRect;
 function EncloseRectF(ARect: TRect; Border: Integer = 0): TRectF;
@@ -167,6 +168,19 @@ begin
     Result := True
   else
     Result := False;
+end;
+
+function GetBoundingRect(SubRect: TRectF; Pixels: ISkPixmap; const AAlphaThreshold: Single): TRect;
+begin
+
+  Result := GetBoundingRect(
+      Rect(
+        Round(SubRect.Left),
+        Round(SubRect.Top),
+        Round(SubRect.Right),
+        Round(SubRect.Bottom)),
+        Pixels,
+        AAlphaThreshold);
 end;
 
 function GetBoundingRect(SubRect: TRect; Pixels: ISkPixmap; const AAlphaThreshold: Single): TRect;
