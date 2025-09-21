@@ -10,8 +10,18 @@ uses
 
 type
   TImageFormat = (Sheet, Strip);
+  TSpriteStorage = (Full, Compact, CompactParts);
 
   TCompositeSheet = class;
+
+  TSpriteFrame = class
+  strict private
+    FSprite: ISkImage;
+    FOffset: TRect;
+    FContainer: TRect;
+  end;
+  TSpriteFrameArray = TArray<TSpriteFrame>;
+
   // TActionSprite stores an image with any transparent border removed
   // To reconstruct the original create a FWidth x FHeight empty
   // transparent image and add the FSprite pixels using the FOffset value
@@ -20,6 +30,8 @@ type
   TActionSprite = class
   strict private
     FSprite: ISkImage;
+    FParts: TSpriteFrameArray;
+    FFrames: Integer;
     FIsEmpty: Boolean;
     FIsCompact: Boolean;
     FOffset: TRect;
@@ -113,7 +125,7 @@ var
   SprDir: Integer;
   SprRect: TRect;
   Split: TRectArray;
-  DestX: Integer;
+  DeltaX: Integer;
   Action: TActionSprite;
   DoneSave: Boolean;
   Bounds: TRect;
@@ -194,6 +206,7 @@ begin
   LPaint := TSkPaint.Create;
   LCompactPaint := TSkPaint.Create;
   FSprites.Clear;
+  FSprites.Capacity := Layout.FrameCount;
 
   for Spr := 0 to Layout.Items.Count - 1 do
     begin
@@ -203,18 +216,18 @@ begin
           SprRect := Rect(0, 0, SprFrames * FFrameSizeX, FFrameSizeY);
           LSurface := TSkSurface.MakeRaster(SprRect.Width, SprRect.Height);
           Split := SheetRemap(Layout.Items[Spr].FirstFrame + (SprDir * SprFrames), SprFrames, Layout.ColCount, Layout.RowCount); // = 46,44
-          DestX := 0;
+          DeltaX := 0;
           for I := 0 to Length(Split) - 1 do
             begin
-//              LSurface.Canvas.DrawImageRect(
-              ShowImageDraw(LSurface,
+              LSurface.Canvas.DrawImageRect(
+//              ShowImageDraw(LSurface,
                 LImage,                          // 2344
                 RectF(Split[I].Left * FFrameSizeX, Split[I].Top * FFrameSizeY,
                      (Split[I].Left * FFrameSizeX) + (Split[I].Width * FFrameSizeX) - 1, (Split[I].Bottom * FFrameSizeY) - 1),
-                RectF(DestX * FFrameSizeX, 0,
-                      (DestX * FFrameSizeX) + (Split[I].Width * FFrameSizeX) - 1, FFrameSizeY - 1),
+                RectF(DeltaX * FFrameSizeX, 0,
+                      (DeltaX * FFrameSizeX) + (Split[I].Width * FFrameSizeX) - 1, FFrameSizeY - 1),
                 LPaint);
-                DestX := DestX + Split[I].Width;
+                DeltaX := DeltaX + Split[I].Width;
             end;
           if(not DoneSave) then
             begin

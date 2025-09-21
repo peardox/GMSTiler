@@ -33,9 +33,10 @@ type
     TabItem2: TTabItem;
     mmLog: TMemo;
     Layout2: TLayout;
-    Button3: TButton;
+    btnClear: TButton;
     fsbLayer: TFramedVertScrollBox;
     mnuCompact: TMenuItem;
+    StatusBar1: TStatusBar;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -43,7 +44,7 @@ type
     procedure mnuScanClick(Sender: TObject);
     procedure LayoutLayerPaint(Sender: TObject; Canvas: TCanvas;
       const ARect: TRectF);
-    procedure Button3Click(Sender: TObject);
+    procedure btnClearClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure mnuCompactClick(Sender: TObject);
   private
@@ -99,47 +100,21 @@ uses
 
 procedure TForm1.AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String);
 var
+  elapsed: Int64;
+  from: TDateTime;
   CI: TSpriteSheet;
 begin
+  from := Now;
   CI := TSpriteSheet.Create;
   if(Ci.LoadSheet(ASheetFormat, AFilename, Layer, mnuCompact.IsChecked)) then
     begin
       Images.Add(CI);
-      GMSLog(Format('%s - %s',[AFilename, SHAFile(AFilename)]));
+      elapsed := DateUtils.MilliSecondsBetween(Now, from);
+      GMSLog(Format('Loaded %s in  %1.3fs',[AFilename, Single(elapsed / 1000)]));
+//      GMSLog(Format('%s - %s',[AFilename, SHAFile(AFilename)]));
     end
   else
     GMSLog('Failed : ' + AFilename);
-end;
-
-procedure TForm1.Button1Click(Sender: TObject);
-var
-  Layout: TSheetLayout;
-  Direction: TDirectionLayout;
-begin
-  mmLog.Lines.Clear;
-
-  if(Assigned(SheetLayouts)) then
-    begin
-      if(SheetLayouts.TryGetValue(TSheetFormat.Character, Layout)) then
-        begin
-          GMSLog(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
-          GMSLog(Layout.Dump);
-        end;
-      if(SheetLayouts.TryGetValue(TSheetFormat.Monster, Layout)) then
-        begin
-          GMSLog(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
-          GMSLog(Layout.Dump);
-        end;
-    end;
-  if(Assigned(DirectionLayouts)) then
-    begin
-      if(DirectionLayouts.TryGetValue(TDirectionFormat.Directions8, Direction)) then
-        GMSLog(Direction.Dump);
-    end;
-
-  DoneLayerSize := False;
-  Images.Clear;
-  TestLoad();
 end;
 
 procedure TForm1.TestLoad();
@@ -158,6 +133,7 @@ begin
   AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Hair/RTP_1/Spritesheet.png', 'hair');
   AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Head/RTP_1/Spritesheet.png', 'head');
   AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'FacialHair/RTP_1/Spritesheet.png', 'facial_hair');
+
 //  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Xbow/Spritesheet.png', 'xbow');
   AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Sword/Spritesheet.png', 'sword');
   AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Shield/Spritesheet.png', 'shield');
@@ -171,6 +147,37 @@ begin
   GMSLog(Format('Load Time : %1.3f',[Single(elapsed / 1000)]));
 
   LayoutLayer.RePaint;
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  Layout: TSheetLayout;
+  Direction: TDirectionLayout;
+begin
+//  mmLog.Lines.Clear;
+{
+  if(Assigned(SheetLayouts)) then
+    begin
+      if(SheetLayouts.TryGetValue(TSheetFormat.Character, Layout)) then
+        begin
+          GMSLog(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
+          GMSLog(Layout.Dump);
+        end;
+      if(SheetLayouts.TryGetValue(TSheetFormat.Monster, Layout)) then
+        begin
+          GMSLog(Format('Cols : %d, Rows : %d, Frames : %d',[Layout.ColCount, Layout.RowCount, Layout.FrameCount]));
+          GMSLog(Layout.Dump);
+        end;
+    end;
+  if(Assigned(DirectionLayouts)) then
+    begin
+      if(DirectionLayouts.TryGetValue(TDirectionFormat.Directions8, Direction)) then
+        GMSLog(Direction.Dump);
+    end;
+}
+  DoneLayerSize := False;
+  Images.Clear;
+  TestLoad();
 end;
 
 procedure TForm1.mnuScanClick(Sender: TObject);
@@ -203,7 +210,7 @@ begin
   CompositeToBitmap(200 * 8, 200, PaintComposite);
 end;
 
-procedure TForm1.Button3Click(Sender: TObject);
+procedure TForm1.btnClearClick(Sender: TObject);
 begin
   mmLog.Lines.Clear;
 end;
