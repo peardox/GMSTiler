@@ -22,11 +22,17 @@ object Form1: TForm1
     Left = 336
     Top = 16
     object MenuItem1: TMenuItem
-      Text = 'File'
-      object MenuItem2: TMenuItem
+      Text = '&File'
+      object mnuScan: TMenuItem
         Locked = True
-        Text = 'Scan'
-        OnClick = MenuItem2Click
+        Text = '&Scan'
+        OnClick = mnuScanClick
+      end
+      object mnuCompact: TMenuItem
+        Locked = True
+        IsChecked = True
+        Text = '&Compact'
+        OnClick = mnuCompactClick
       end
     end
   end

@@ -20,7 +20,7 @@ type
     Layout1: TLayout;
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
-    MenuItem2: TMenuItem;
+    mnuScan: TMenuItem;
     TabControl1: TTabControl;
     TabItem1: TTabItem;
     LayoutTree: TLayout;
@@ -35,15 +35,17 @@ type
     Layout2: TLayout;
     Button3: TButton;
     fsbLayer: TFramedVertScrollBox;
+    mnuCompact: TMenuItem;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
-    procedure MenuItem2Click(Sender: TObject);
+    procedure mnuScanClick(Sender: TObject);
     procedure LayoutLayerPaint(Sender: TObject; Canvas: TCanvas;
       const ARect: TRectF);
     procedure Button3Click(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure mnuCompactClick(Sender: TObject);
   private
     DoneLayerSize: Boolean;
     Images: TObjectList<TSpriteSheet>;
@@ -100,7 +102,7 @@ var
   CI: TSpriteSheet;
 begin
   CI := TSpriteSheet.Create;
-  if(Ci.LoadSheet(ASheetFormat, AFilename, Layer)) then
+  if(Ci.LoadSheet(ASheetFormat, AFilename, Layer, mnuCompact.IsChecked)) then
     begin
       Images.Add(CI);
       GMSLog(Format('%s - %s',[AFilename, SHAFile(AFilename)]));
@@ -171,7 +173,7 @@ begin
   LayoutLayer.RePaint;
 end;
 
-procedure TForm1.MenuItem2Click(Sender: TObject);
+procedure TForm1.mnuScanClick(Sender: TObject);
 var
   fl: TFileDirectoryList;
   gid: Integer;
@@ -184,6 +186,15 @@ begin
    fl,
    gid);
    fl.free;
+end;
+
+procedure TForm1.mnuCompactClick(Sender: TObject);
+begin
+  mnuCompact.IsChecked := not mnuCompact.IsChecked;
+  if(mnuCompact.IsChecked) then
+    Caption := 'Compact'
+  else
+    Caption := 'Fast';
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);

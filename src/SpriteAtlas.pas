@@ -12,14 +12,25 @@ type
   TImageFormat = (Sheet, Strip);
 
   TCompositeSheet = class;
-
+  // TActionSprite stores an image with any transparent border removed
+  // To reconstruct the original create a FWidth x FHeight empty
+  // transparent image and add the FSprite pixels using the FOffset value
+  // for placing and sizing. This ensures that the absolute minumum number
+  // of pixels is actually stored reducing memory usage.
   TActionSprite = class
+  strict private
     FSprite: ISkImage;
     FIsEmpty: Boolean;
+    FIsCompact: Boolean;
+    FOffset: TRect;
+    FContainer: TRect;
+    function ReConstruct: ISkImage;
   public
-    constructor Create(ASprite: ISkImage; ASpriteIsEmpty: Boolean);
-    property Sprite: ISkImage read FSprite;
+    constructor Create(const ASprite: ISkImage; const ABounds: TRect; const AContainer: TRect);
+    property Sprite: ISkImage read ReConstruct;
     property IsEmpty: Boolean read FIsEmpty;
+    property Offset: TRect read FOffset;
+    property Container: TRect read FContainer;
   end;
 
   TSpriteSheet = class
@@ -33,10 +44,11 @@ type
     FSpareFrames: Integer;
     FSheetFormat: TSheetFormat;
     FFormat: TImageFormat;
+  private
   public
     constructor Create;
     destructor Destroy(); override;
-    function LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String): Boolean;
+    function LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const MakeCompact: Boolean = False): Boolean;
     property SizeX: Integer read FSizeX write FSizeX;
     property SizeY: Integer read FSizeY write FSizeY;
     property FrameSizeX: Integer read FFrameSizeX write FFrameSizeX;
@@ -68,7 +80,7 @@ type
 implementation
 
 uses
-  FMX.Skia, FMX.Graphics, TileUtils;
+  FMX.Skia, FMX.Graphics, TileUtils, GMSimpleLog;
 
 { TSpriteSheet }
 
@@ -84,22 +96,27 @@ begin
   inherited;
 end;
 
-function TSpriteSheet.LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String): Boolean;
+function TSpriteSheet.LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const MakeCompact: Boolean): Boolean;
 var
   LPaint: ISkPaint;
   LSurface: ISkSurface;
   LImage: ISkImage;
   LSprite: ISkImage;
+  LCompactPaint: ISkPaint;
+  LCompactSprite: ISkImage;
+  LCompactSurface: ISkSurface;
 //  LBitmap: TBitmap;
   I: Integer;
   Spr: Integer;
   Layout: TSheetLayout;
   SprFrames: Integer;
   SprDir: Integer;
+  SprRect: TRect;
   Split: TRectArray;
   DestX: Integer;
   Action: TActionSprite;
-//  bound: TRect;
+  DoneSave: Boolean;
+  Bounds: TRect;
 {$IF DEFINED(IMAGELOADUSESTREAM)}
   LStream: TMemoryStream;
 {$ENDIF}
@@ -108,6 +125,10 @@ begin
   ASurface.Canvas.DrawImageRect(AImage, src, dst, APaint);
 end;
 begin
+  DoneSave := False;
+  if(not Afilename.Contains('Base')) then
+    DoneSave := True;
+
   Result := False;
   FSheetFormat := ASheetFormat;
 
@@ -171,6 +192,7 @@ begin
 {$ENDIF}
   // Deconstruct SpriteSheet into SpriteRuns
   LPaint := TSkPaint.Create;
+  LCompactPaint := TSkPaint.Create;
   FSprites.Clear;
 
   for Spr := 0 to Layout.Items.Count - 1 do
@@ -178,8 +200,8 @@ begin
       SprFrames := Layout.Items[Spr].ActionFrames;
       for SprDir := 0 to Layout.Items[Spr].ActionDirections - 1 do
         begin
-          LSurface := TSkSurface.MakeRaster(SprFrames * FFrameSizeX, FFrameSizeY);
-         // LSurface.Canvas.Clear(TAlphaColors.Null);
+          SprRect := Rect(0, 0, SprFrames * FFrameSizeX, FFrameSizeY);
+          LSurface := TSkSurface.MakeRaster(SprRect.Width, SprRect.Height);
           Split := SheetRemap(Layout.Items[Spr].FirstFrame + (SprDir * SprFrames), SprFrames, Layout.ColCount, Layout.RowCount); // = 46,44
           DestX := 0;
           for I := 0 to Length(Split) - 1 do
@@ -194,18 +216,38 @@ begin
                 LPaint);
                 DestX := DestX + Split[I].Width;
             end;
-        {
-          bound := GetBoundingRect(LSurface.PeekPixels, 0);
-          if(bound.IsEmpty) then
-            Raise Exception.CreateFmt('Empty Image for %s', [AFilename]);
-        }
+          if(not DoneSave) then
+            begin
+              GrabSprite(LSurface, 'SubBitmap.png');
+              DoneSave := True;
+            end;
+
+          Bounds := GetBoundingRect(LSurface.PeekPixels, 0);
           LSprite := LSurface.MakeImageSnapshot;
-          Action := TActionSprite.Create(LSprite, IsSpriteEmpty(LSprite));
-          FSprites.Add(Action);
+
+          if(Bounds.IsEmpty) then
+            begin
+              LCompactSurface := TSkSurface.MakeRaster(1, 1);
+              LCompactSurface.Canvas.Clear(TAlphaColors.Null);
+              LCompactSprite := LCompactSurface.MakeImageSnapshot;
+            end
+          else
+            begin
+              LCompactSurface := TSkSurface.MakeRaster(Bounds.Width, Bounds.Height);
+              LCompactSurface.Canvas.DrawImageRect(LSprite, Bounds, Rect(0, 0, Bounds.Width, Bounds.Height), LCompactPaint);
+              LCompactSprite := LCompactSurface.MakeImageSnapshot;
 {$IFDEF TESTSPRITE}
           if(not Action.IsEmpty) then
-            GrabSprite(LSurface, 'sprites/'+ Layer + '/' + Layout.Items[Spr].Action + '_dir' + IntToStr(SprDir) + '_strip'  + IntToStr(SprFrames) + '.png');
+            GrabSprite(LCompactSurface, 'sprites/'+ Layer + '/' + Layout.Items[Spr].Action + '_dir' + IntToStr(SprDir) + '_strip'  + IntToStr(SprFrames) + '.png');
 {$ENDIF}
+            end;
+
+          if(MakeCompact) then
+            Action := TActionSprite.Create(LCompactSprite, Bounds, SprRect)
+          else
+            Action := TActionSprite.Create(LSprite, SprRect, SprRect);
+          FSprites.Add(Action);
+
 
         //  GrabSprite(LSurface, System.SysUtils.Format('TestSprite%0*d.png',[3,Counter]));
         //  Counter := Counter + 1;
@@ -245,10 +287,36 @@ end;
 
 { TActionSprite }
 
-constructor TActionSprite.Create(ASprite: ISkImage; ASpriteIsEmpty: Boolean);
+constructor TActionSprite.Create(const ASprite: ISkImage; const ABounds: TRect; const AContainer: TRect);
 begin
   FSprite := ASprite;
-  FIsEmpty := ASpriteIsEmpty;
+  FIsEmpty := ABounds.IsEmpty;
+  FOffset := ABounds;
+  FContainer := AContainer;
+  if((FOffset.Width < FContainer.Width) or (FOffset.Height < FContainer.Height)) then
+    FIsCompact := True
+  else
+    FIsCompact := False;
+
+end;
+
+function TActionSprite.ReConstruct: ISkImage;
+var
+  LPaint: TSkPaint;
+  LSurface: ISkSurface;
+begin
+  if FIsCompact then
+    begin
+      LPaint := TSkPaint.Create;
+      LSurface := TSkSurface.MakeRaster(FContainer.Width, FContainer.Height);
+      LSurface.Canvas.Clear(TAlphaColors.Null);
+      if not FIsEmpty then
+        LSurface.Canvas.DrawImageRect(FSprite, Rect(0, 0, FOffset.Width, FOffset.Height), FOffset, LPaint);
+      Result := LSurface.MakeImageSnapshot;
+      LPaint.Free;
+    end
+  else
+    Result := FSprite;
 end;
 
 end.
