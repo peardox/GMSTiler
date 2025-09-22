@@ -9,7 +9,6 @@ object Form1: TForm1
   FormFactor.Devices = [Desktop]
   OnCreate = FormCreate
   OnClose = FormClose
-  OnDestroy = FormDestroy
   DesignerMasterStyle = 0
   object Layout1: TLayout
     Align = Top
@@ -33,6 +32,11 @@ object Form1: TForm1
         IsChecked = True
         Text = '&Compact'
         OnClick = mnuCompactClick
+      end
+      object mnuExit: TMenuItem
+        Locked = True
+        Text = '&Exit'
+        OnClick = mnuExitClick
       end
     end
   end
@@ -99,21 +103,6 @@ object Form1: TForm1
           TabOrder = 1
           Text = 'Render'
           OnClick = btnRenderClick
-        end
-        object BodyParts: TComboBox
-          Items.Strings = (
-            'Disabled'
-            'Option 1'
-            'Option 2'
-            'Option 3'
-            '')
-          Position.X = 352.000000000000000000
-          TabOrder = 2
-        end
-        object Label1: TLabel
-          Position.X = 488.000000000000000000
-          Text = 'Label1'
-          TabOrder = 3
         end
       end
       object Layout4: TLayout

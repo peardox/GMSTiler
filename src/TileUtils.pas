@@ -342,7 +342,7 @@ begin
                     else
                       DirItem := TFileDirectory.Create(ADir, ASubDir, sr.Name, GroupID);
                     AList.Add(DirItem);
-                    GMSLog(Format('%5d - %03d - %s - %s', [AList.Count, DirItem.GroupID, DirItem.SubDir, DirItem.FileName]));
+                    GMS.Log(Format('%5d - %03d - %s - %s', [AList.Count, DirItem.GroupID, DirItem.SubDir, DirItem.FileName]));
                   end;
               end;
           end

@@ -9,7 +9,8 @@ uses
   TileUtils in 'TileUtils.pas',
   SpriteAtlas in 'SpriteAtlas.pas',
   GMSimpleLog in 'GMSimpleLog.pas',
-  SkComponents in 'SkComponents.pas';
+  SkComponents in 'SkComponents.pas',
+  Settings in 'Settings.pas';
 
 {$R *.res}
 

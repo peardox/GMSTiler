@@ -37,8 +37,7 @@ type
     fsbLayer: TFramedVertScrollBox;
     mnuCompact: TMenuItem;
     StatusBar1: TStatusBar;
-    BodyParts: TComboBox;
-    Label1: TLabel;
+    mnuExit: TMenuItem;
     procedure btnLoadClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnRenderClick(Sender: TObject);
@@ -47,8 +46,8 @@ type
     procedure LayoutLayerPaint(Sender: TObject; Canvas: TCanvas;
       const ARect: TRectF);
     procedure btnClearClick(Sender: TObject);
-    procedure FormDestroy(Sender: TObject);
     procedure mnuCompactClick(Sender: TObject);
+    procedure mnuExitClick(Sender: TObject);
   private
     DoneLayerSize: Boolean;
     Images: TObjectList<TSpriteSheet>;
@@ -58,7 +57,8 @@ type
     procedure TestLoad;
 //    procedure DebugMessage(const AMsg: String);
     procedure PaintComposite(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
-    procedure LogMemo(s: String);
+    procedure LogMemo(const s: String);
+    procedure LogMemoFormat(const AFormat: String; const Args: array of const);
     { Private declarations }
   public
     { Public declarations }
@@ -98,7 +98,7 @@ implementation
 
 uses
   Math, FMX.Skia.Canvas, TileUtils,
-  DateUtils, GMSimpleLog;
+  DateUtils, GMSimpleLog, Settings;
 
 procedure TForm1.AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String);
 var
@@ -112,11 +112,11 @@ begin
     begin
       Images.Add(CI);
       elapsed := DateUtils.MilliSecondsBetween(Now, from);
-      GMSLog(Format('Loaded %s in  %1.3fs',[AFilename, Single(elapsed / 1000)]));
+      GMS.Log(Format('Loaded %s in  %1.3fs',[AFilename, Single(elapsed / 1000)]));
 //      GMSLog(Format('%s - %s',[AFilename, SHAFile(AFilename)]));
     end
   else
-    GMSLog('Failed : ' + AFilename);
+    GMS.Log('Failed : ' + AFilename);
 end;
 
 procedure TForm1.TestLoad();
@@ -146,7 +146,7 @@ begin
 
 
   elapsed := DateUtils.MilliSecondsBetween(Now, from);
-  GMSLog(Format('Load Time : %1.3f',[Single(elapsed / 1000)]));
+  GMS.Log(Format('Load Time : %1.3f',[Single(elapsed / 1000)]));
 
   LayoutLayer.RePaint;
 end;
@@ -206,6 +206,11 @@ begin
     Caption := 'Fast';
 end;
 
+procedure TForm1.mnuExitClick(Sender: TObject);
+begin
+  Close;
+end;
+
 procedure TForm1.btnRenderClick(Sender: TObject);
 begin
   DoneLayerSize := True;
@@ -253,7 +258,11 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  GMSLog := LogMemo;
+  GlobalInit;
+//  GMS.LogProc := LogMemo;
+//  GMS.LogFormatProc := LogMemoFormat;
+
+  GMS.LogFormat('Default Home = %s', [DefaultHome]);
   TabControl1.ActiveTab := TabItem1;
   Images := TObjectList<TSpriteSheet>.Create;
   FDrawProc := PaintComposite;
@@ -274,11 +283,6 @@ begin
       Test.Align := TAlignLayout.Client;
       Test.Parent := bl;
       }
-end;
-
-procedure TForm1.FormDestroy(Sender: TObject);
-begin
-  GMSLog := GMSNullLogger;
 end;
 
 procedure TForm1.PaintComposite(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
@@ -350,9 +354,14 @@ begin
     end;
 end;
 
-procedure TForm1.LogMemo(s: String);
+procedure TForm1.LogMemo(const s: String);
 begin
   mmLog.Lines.Add(s);
+end;
+
+procedure TForm1.LogMemoFormat(const AFormat: String; const Args: array of const);
+begin
+  mmLog.Lines.Add(Format(AFormat, Args));
 end;
 
 end.
