@@ -317,6 +317,9 @@
         <DCCReference Include="GMSimpleLog.pas"/>
         <DCCReference Include="SkComponents.pas"/>
         <DCCReference Include="Settings.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\json\clJsonParser.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\json\clJsonSerializer.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\json\clJsonSerializerBase.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -494,6 +497,12 @@
                 <DeployFile LocalName="Win64\Debug\GMSSpriteBuilder.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win64">
                         <RemoteName>GMSSpriteBuilder.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win64\Debug\GMSSpriteBuilder.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="Win64">
+                        <RemoteName>GMSSpriteBuilder.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

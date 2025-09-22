@@ -16,16 +16,18 @@ const
 
 implementation
 
+uses clJsonSerializer;
+
 procedure GlobalInit;
 begin
   {$IF DEFINED(MACOS)}
-  // Default Home = /Users/simon/Library/SpriteBuilder
+  // Default Home = /Users/peardox/Library/SpriteBuilder
   DefaultHome := IncludeTrailingPathDelimiter(System.IOUtils.TPath.GetLibraryPath) + appname;
   {$ELSEIF DEFINED(LINUX)}
-  // Default Home = /home/simon/.SpriteBuilder
+  // Default Home = /home/peardox/.SpriteBuilder
   DefaultHome := IncludeTrailingPathDelimiter(System.IOUtils.TPath.GetHomePath) + '.' + appname;
   {$ELSE}
-  // Default Home = C:\Users\simon\AppData\Roaming\SpriteBuilder
+  // Default Home = C:\Users\peardox\AppData\Roaming\SpriteBuilder
   DefaultHome := IncludeTrailingPathDelimiter(System.IOUtils.TPath.GetHomePath) + appname;
   {$ENDIF}
 end;
