@@ -3,12 +3,16 @@ unit SkComponents;
 interface
 
 uses
+  System.SysUtils,
   System.Classes,
   System.UITypes,
   System.Types,
   FMX.Types,
   FMX.Controls,
   FMX.Layouts,
+  FMX.StdCtrls,
+  FMX.Objects,
+  FMX.ListBox,
   FMX.Graphics;
 
 
@@ -36,6 +40,17 @@ type
     property BorderThickness: Single
       read FBorderThickness
       write SetBorderThickness;
+  end;
+
+  TBodyPartLayout = class(TBorderLayout)
+  strict private
+    FCaption: TLabel;
+    FImage: TCircle;
+    FSelect: TComboBox;
+    FOptions: TStringList;
+  public
+    constructor Create(AOwner: TComponent; const ACaption: String; const AOption: Array of String); reintroduce;
+    destructor Destroy; override;
   end;
 
 procedure Register;
@@ -113,6 +128,46 @@ begin
                     AllCorners,
                     1.0);
   end;
+end;
+
+{ TBodyPartLayout }
+
+constructor TBodyPartLayout.Create(AOwner: TComponent; const ACaption: String;
+  const AOption: array of String);
+var
+  I: Integer;
+begin
+  inherited Create(AOwner);
+  Width := 100;
+  Height := 100;
+  Parent := TFmxObject(AOwner);
+  Align := TAlignLayout.Top;
+
+  FCaption := TLabel.Create(Self);
+  FCaption.Align := TAlignLayout.Top;
+  FCaption.Parent := Self;
+  FCaption.Text := ACaption;
+  FCaption.TextSettings.HorzAlign := TTextAlign.Center;
+
+  FImage := TCircle.Create(Self);
+  FImage.Align := TAlignLayout.Client;
+  FImage.Parent := Self;
+
+  FSelect := TComboBox.Create(Self);
+  FSelect.Align := TAlignLayout.Bottom;
+  FSelect.Parent := Self;
+
+  FOptions := TStringList.Create;
+  for I := 0 to Length(AOption) - 1 do
+    FOptions.Add(AOption[I]);
+
+  FSelect.Items := FOptions;
+end;
+
+destructor TBodyPartLayout.Destroy;
+begin
+  FOptions.Free;
+  inherited;
 end;
 
 end.

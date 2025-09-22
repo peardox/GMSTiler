@@ -11,7 +11,7 @@ uses
   System.Generics.Defaults, System.Generics.Collections, FMX.Menus, FMX.TreeView,
   FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.TabControl,
   System.Math.Vectors, FMX.Controls3D, FMX.Layers3D,
-  LayoutCSV, SpriteAtlas, SkComponents;
+  LayoutCSV, SpriteAtlas, SkComponents, FMX.ListBox;
 
 type
   TSkDrawProc = reference to procedure(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
@@ -26,8 +26,8 @@ type
     LayoutTree: TLayout;
     TreeView1: TTreeView;
     Layout3: TLayout;
-    Button1: TButton;
-    Button2: TButton;
+    btnLoad: TButton;
+    btnRender: TButton;
     Layout4: TLayout;
     LayoutLayer: TLayout;
     TabItem2: TTabItem;
@@ -37,9 +37,11 @@ type
     fsbLayer: TFramedVertScrollBox;
     mnuCompact: TMenuItem;
     StatusBar1: TStatusBar;
-    procedure Button1Click(Sender: TObject);
+    BodyParts: TComboBox;
+    Label1: TLabel;
+    procedure btnLoadClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
+    procedure btnRenderClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure mnuScanClick(Sender: TObject);
     procedure LayoutLayerPaint(Sender: TObject; Canvas: TCanvas;
@@ -54,7 +56,7 @@ type
     procedure CompositeToBitmap(const AWidth, AHeight: Integer; const ADrawProc: TSkDrawProc);
     procedure AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String);
     procedure TestLoad;
-    procedure DebugMessage(const AMsg: String);
+//    procedure DebugMessage(const AMsg: String);
     procedure PaintComposite(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
     procedure LogMemo(s: String);
     { Private declarations }
@@ -149,10 +151,10 @@ begin
   LayoutLayer.RePaint;
 end;
 
-procedure TForm1.Button1Click(Sender: TObject);
-var
-  Layout: TSheetLayout;
-  Direction: TDirectionLayout;
+procedure TForm1.btnLoadClick(Sender: TObject);
+// var
+//  Layout: TSheetLayout;
+//  Direction: TDirectionLayout;
 begin
 //  mmLog.Lines.Clear;
 {
@@ -204,7 +206,7 @@ begin
     Caption := 'Fast';
 end;
 
-procedure TForm1.Button2Click(Sender: TObject);
+procedure TForm1.btnRenderClick(Sender: TObject);
 begin
   DoneLayerSize := True;
   CompositeToBitmap(200 * 8, 200, PaintComposite);
@@ -238,40 +240,40 @@ begin
 
     end;
 end;
-
+{
 procedure TForm1.DebugMessage(const AMsg: String);
 begin
   GMSLog(AMsg);
 end;
-
+}
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   Images.Free;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
-var
-  I: Integer;
-  bl: TBorderLayout;
-  test: TCircle;
 begin
   GMSLog := LogMemo;
   TabControl1.ActiveTab := TabItem1;
   Images := TObjectList<TSpriteSheet>.Create;
   FDrawProc := PaintComposite;
   // TestLoad();
-  for I := 0 to 8 do
-    begin
-      bl := TBorderLayout.Create(fsbLayer);
+      TBodyPartLayout.Create(fsbLayer, 'Shadow', ['Disabled', 'Enabled']);
+      TBodyPartLayout.Create(fsbLayer, 'Body', ['Disabled', 'Option 1', 'Option 2', 'Option 3']);
+      TBodyPartLayout.Create(fsbLayer, 'Legs', ['Disabled', 'Option 1', 'Option 2', 'Option 3']);
+      TBodyPartLayout.Create(fsbLayer, 'Arms', ['Disabled', 'Option 1', 'Option 2', 'Option 3']);
+      TBodyPartLayout.Create(fsbLayer, 'Main Weapon', ['Disabled', 'Option 1', 'Option 2', 'Option 3']);
+      TBodyPartLayout.Create(fsbLayer, 'Offhand Weapon', ['Disabled', 'Option 1', 'Option 2', 'Option 3']);
+      {
+      bl := TBorderLayout.Create(fsbLayer);   // TBodyPartLayout
       bl.Width := 100;
       bl.Height := 100;
       bl.Parent := fsbLayer;
       bl.Align := TAlignLayout.Top;
-      fsbLayer.Content.AddObject(bl);
       Test := TCircle.Create(bl);
       Test.Align := TAlignLayout.Client;
       Test.Parent := bl;
-    end;
+      }
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
@@ -284,7 +286,7 @@ var
   LPaint: ISkPaint;
   I: Integer;
   RenderRect: TRectF;
-  Bound: TRect;
+//  Bound: TRect;
   BoundRect: TRect;
   FitScale: TFitScale;
 begin

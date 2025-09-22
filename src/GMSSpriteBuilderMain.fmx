@@ -41,7 +41,7 @@ object Form1: TForm1
     Size.Width = 857.000000000000000000
     Size.Height = 523.000000000000000000
     Size.PlatformDefault = False
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 0
     TabPosition = PlatformDefault
     Sizes = (
@@ -53,7 +53,7 @@ object Form1: TForm1
       CustomIcon = <
         item
         end>
-      IsSelected = False
+      IsSelected = True
       Size.Width = 47.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -85,20 +85,35 @@ object Form1: TForm1
         Size.Height = 38.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 1
-        object Button1: TButton
+        object btnLoad: TButton
           Anchors = [akTop, akRight]
           Position.X = 769.000000000000000000
           Position.Y = 8.000000000000000000
           TabOrder = 0
           Text = 'Load'
-          OnClick = Button1Click
+          OnClick = btnLoadClick
         end
-        object Button2: TButton
+        object btnRender: TButton
           Position.X = 8.000000000000000000
           Position.Y = 8.000000000000000000
           TabOrder = 1
           Text = 'Render'
-          OnClick = Button2Click
+          OnClick = btnRenderClick
+        end
+        object BodyParts: TComboBox
+          Items.Strings = (
+            'Disabled'
+            'Option 1'
+            'Option 2'
+            'Option 3'
+            '')
+          Position.X = 352.000000000000000000
+          TabOrder = 2
+        end
+        object Label1: TLabel
+          Position.X = 488.000000000000000000
+          Text = 'Label1'
+          TabOrder = 3
         end
       end
       object Layout4: TLayout
@@ -131,7 +146,7 @@ object Form1: TForm1
       CustomIcon = <
         item
         end>
-      IsSelected = True
+      IsSelected = False
       Size.Width = 56.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -168,7 +183,7 @@ object Form1: TForm1
           Position.X = 8.000000000000000000
           Position.Y = 8.000000000000000000
           TabOrder = 0
-          Text = 'btnClear'
+          Text = 'Clear'
           OnClick = btnClearClick
         end
       end

@@ -117,7 +117,6 @@ var
   LCompactPaint: ISkPaint;
   LCompactSprite: ISkImage;
   LCompactSurface: ISkSurface;
-//  LBitmap: TBitmap;
   I: Integer;
   Spr: Integer;
   Layout: TSheetLayout;
@@ -127,20 +126,19 @@ var
   Split: TRectArray;
   DeltaX: Integer;
   Action: TActionSprite;
-  DoneSave: Boolean;
+//  DoneSave: Boolean;
   Bounds: TRect;
-{$IF DEFINED(IMAGELOADUSESTREAM)}
   LStream: TMemoryStream;
-{$ENDIF}
 procedure ShowImageDraw(const ASurface: ISkSurface; const AImage: ISkImage; const src: TRectF; const dst: TRectF; const APaint: ISkPaint);
 begin
   ASurface.Canvas.DrawImageRect(AImage, src, dst, APaint);
 end;
 begin
+{
   DoneSave := False;
   if(not Afilename.Contains('Base')) then
     DoneSave := True;
-
+}
   Result := False;
   FSheetFormat := ASheetFormat;
 
@@ -155,7 +153,6 @@ begin
   else
     Raise Exception.CreateFmt('Couldn''t find Layout for %s', [AFilename]);
 
-{$IF DEFINED(IMAGELOADUSESTREAM)}
   LStream := TMemoryStream.Create;
   try
     LStream.LoadFromFile(AFilename);
@@ -163,14 +160,7 @@ begin
   finally
     LStream.Free;
   end;
-{$ELSE}
-//  LBitmap := TBitmap.Create;
-  try
-//  LBitmap.LoadFromFile(AFilename);
 
-  LImage := TSkImage.MakeFromEncodedFile(AFilename);
-//  LImage := BitmapToSkImage(LBitmap); //.MakeFromEncodedFile(AFilename);
-{$ENDIF}
   FSizeX := LImage.Width;
   FSizeY := LImage.Height;
 
@@ -229,12 +219,13 @@ begin
                 LPaint);
                 DeltaX := DeltaX + Split[I].Width;
             end;
+{
           if(not DoneSave) then
             begin
               GrabSprite(LSurface, 'SubBitmap.png');
               DoneSave := True;
             end;
-
+}
           Bounds := GetBoundingRect(LSurface.PeekPixels, 0);
           LSprite := LSurface.MakeImageSnapshot;
 
@@ -267,11 +258,6 @@ begin
         //  ADrawProc(LSurface.Canvas, RectF(0, 0, AWidth, AHeight));
         end;
     end;
-
-    finally
-  //    LBitmap.Free;
-    end;
-
 
   Result := True;
 end;
