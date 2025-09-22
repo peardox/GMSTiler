@@ -259,8 +259,8 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   GlobalInit;
-//  GMS.LogProc := LogMemo;
-//  GMS.LogFormatProc := LogMemoFormat;
+  GMS.LogProc := LogMemo;
+  GMS.LogFormatProc := LogMemoFormat;
 
   GMS.LogFormat('Default Home = %s', [DefaultHome]);
   TabControl1.ActiveTab := TabItem1;
