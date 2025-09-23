@@ -10,10 +10,7 @@ uses
   SpriteAtlas in 'SpriteAtlas.pas',
   GMSimpleLog in 'GMSimpleLog.pas',
   SkComponents in 'SkComponents.pas',
-  Settings in 'Settings.pas',
-  clJsonParser in '..\thirdparty\json-serializer\json\clJsonParser.pas',
-  clJsonSerializer in '..\thirdparty\json-serializer\json\clJsonSerializer.pas',
-  clJsonSerializerBase in '..\thirdparty\json-serializer\json\clJsonSerializerBase.pas';
+  JsonSettings in 'JsonSettings.pas';
 
 {$R *.res}
 

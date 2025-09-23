@@ -98,7 +98,7 @@ implementation
 
 uses
   Math, FMX.Skia.Canvas, TileUtils,
-  DateUtils, GMSimpleLog, Settings;
+  DateUtils, GMSimpleLog, JsonSettings;
 
 procedure TForm1.AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String);
 var
@@ -258,11 +258,10 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
-  GlobalInit;
+//  GlobalInit;
   GMS.LogProc := LogMemo;
   GMS.LogFormatProc := LogMemoFormat;
-
-  GMS.LogFormat('Default Home = %s', [DefaultHome]);
+  GMS.LogFormat('Home = %s', [Settings.AppHome]);
   TabControl1.ActiveTab := TabItem1;
   Images := TObjectList<TSpriteSheet>.Create;
   FDrawProc := PaintComposite;

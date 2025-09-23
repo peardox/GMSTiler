@@ -316,10 +316,7 @@
         <DCCReference Include="SpriteAtlas.pas"/>
         <DCCReference Include="GMSimpleLog.pas"/>
         <DCCReference Include="SkComponents.pas"/>
-        <DCCReference Include="Settings.pas"/>
-        <DCCReference Include="..\thirdparty\json-serializer\json\clJsonParser.pas"/>
-        <DCCReference Include="..\thirdparty\json-serializer\json\clJsonSerializer.pas"/>
-        <DCCReference Include="..\thirdparty\json-serializer\json\clJsonSerializerBase.pas"/>
+        <DCCReference Include="JsonSettings.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
