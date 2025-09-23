@@ -1,6 +1,7 @@
 unit SpriteAtlas;
 
 // {$DEFINE TESTSPRITE}
+// {$DEFINE LAYOUTLIST}
 
 interface
 
@@ -54,13 +55,13 @@ type
     FFrameSizeY: Integer;
     FFrames: Integer;
     FSpareFrames: Integer;
-    FSheetFormat: TSheetFormat;
+    FSheetFormat: String;
     FFormat: TImageFormat;
   private
   public
     constructor Create;
     destructor Destroy(); override;
-    function LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const MakeCompact: Boolean = False): Boolean;
+    function LoadSheet(const ASheetFormat: String; const AFilename: String; const Layer: String; const MakeCompact: Boolean = False): Boolean;
     property SizeX: Integer read FSizeX write FSizeX;
     property SizeY: Integer read FSizeY write FSizeY;
     property FrameSizeX: Integer read FFrameSizeX write FFrameSizeX;
@@ -68,7 +69,7 @@ type
     property Frames: Integer read FFrames write FFrames;
     property Sprites: TObjectList<TActionSprite> read FSprites write FSprites;
     property SpareFrames: Integer read FSpareFrames write FSpareFrames;
-    property SheetFormat: TSheetFormat read FSheetFormat write FSheetFormat;
+    property SheetFormat: String read FSheetFormat write FSheetFormat;
     property Format: TImageFormat read FFormat write FFormat;
   end;
 
@@ -78,14 +79,14 @@ type
     FFrameSizeX: Integer;
     FFrameSizeY: Integer;
     FFrames: Integer;
-    FFormat: TSheetFormat;
+    FFormat: String;
   public
-    constructor Create(const AFormat: TSheetFormat; const ASpriteSizeX, ASpriteSizeY, AFrameCount: Integer);
+    constructor Create(const AFormat: String; const ASpriteSizeX, ASpriteSizeY, AFrameCount: Integer);
     destructor Destroy(); override;
     procedure AddSheet(const AFilename: String);
     property FrameSizeX: Integer read FFrameSizeX write FFrameSizeX;
     property FrameSizeY: Integer read FFrameSizeY write FFrameSizeY;
-    property Format: TSheetFormat read FFormat write FFormat;
+    property Format: String read FFormat write FFormat;
     property Frames: Integer read FFrames write FFrames;
   end;
 
@@ -108,7 +109,7 @@ begin
   inherited;
 end;
 
-function TSpriteSheet.LoadSheet(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String; const MakeCompact: Boolean): Boolean;
+function TSpriteSheet.LoadSheet(const ASheetFormat: String; const AFilename: String; const Layer: String; const MakeCompact: Boolean): Boolean;
 var
   LPaint: ISkPaint;
   LSurface: ISkSurface;
@@ -147,7 +148,17 @@ begin
 
   if(Assigned(SheetLayouts)) then
     begin
+{$IFDEF LAYOUTLIST}
+      Layout := Nil;
+      for I := 0 to SheetLayouts.Count -1 do
+        begin
+          if(SheetLayouts[I].Format = FSheetFormat) then
+            Layout := SheetLayouts[I];
+        end;
+      if Layout = Nil then
+{$ELSE}
       if(not SheetLayouts.TryGetValue(FSheetFormat, Layout)) then
+{$ENDIF}
         Raise Exception.CreateFmt('Couldn''t find Layout for %s', [AFilename]);
     end
   else
@@ -269,7 +280,7 @@ begin
   // Placeholder
 end;
 
-constructor TCompositeSheet.Create(const AFormat: TSheetFormat;
+constructor TCompositeSheet.Create(const AFormat: String;
   const ASpriteSizeX, ASpriteSizeY, AFrameCount: Integer);
 begin
     FSheets := TObjectList<TSpriteSheet>.Create;

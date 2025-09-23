@@ -29,9 +29,14 @@ procedure GlobalInit;
 implementation
 
 uses
+  System.Generics.Collections,
+  JsonSerializer,
+  GMSimpleLog,
   LayoutCSV;
 
 procedure GlobalInit;
+var
+  Layouts: TSheetLayoutDict;
 begin
   {$IF DEFINED(MACOS)}
   // Default Home = /Users/peardox/Library/SpriteBuilder
@@ -46,7 +51,6 @@ begin
 
   Settings := TSettings.Create;
   Settings.AppHome := DefaultHome;
-
 end;
 
 procedure GlobalTidyUp;
@@ -71,21 +75,17 @@ begin
 end;
 
 procedure TSettings.Save;
-//var
-//  Layout: TSheetLayout;
-//  json: String;
 begin
-{
-  if not(DirectoryExists(Settings.AppHome)) then
-    ForceDirectories(Settings.AppHome);
-  TFile.WriteAllText(TPath.Combine(Settings.AppHome, 'Settings.json'), json);
-}
+   SaveObjAsJson(Settings, Settings.AppHome, 'Settings.json');
+   SaveObjAsJson(SheetLayouts, Settings.AppHome, 'SheetLayoutsTest.json');
 end;
 
 Initialization
   GlobalInit;
+  LoadLayouts();
 
 Finalization
   GlobalTidyUp;
+  UnLoadLayouts();
 
 end.

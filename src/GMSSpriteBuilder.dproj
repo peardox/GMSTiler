@@ -311,12 +311,25 @@
             <Form>Form1</Form>
             <FormType>fmx</FormType>
         </DCCReference>
+        <DCCReference Include="JsonSettings.pas"/>
+        <DCCReference Include="JsonSerializer.pas"/>
         <DCCReference Include="LayoutCSV.pas"/>
         <DCCReference Include="TileUtils.pas"/>
         <DCCReference Include="SpriteAtlas.pas"/>
         <DCCReference Include="GMSimpleLog.pas"/>
         <DCCReference Include="SkComponents.pas"/>
-        <DCCReference Include="JsonSettings.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Utils.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Types.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Attributes.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.DynamicTypes.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Nullables.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Persistence.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Persistence.JSON.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Persistence.JSON.Schema.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Serializers.Nullables.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Serializers.RTL.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.Tags.pas"/>
+        <DCCReference Include="..\thirdparty\json-serializer\Source\Neon.Core.TypeInfo.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

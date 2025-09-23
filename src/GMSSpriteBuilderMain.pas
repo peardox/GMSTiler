@@ -1,7 +1,6 @@
 unit GMSSpriteBuilderMain;
 
 interface
-{$DEFINE IMAGELOADUSESTREAM}
 {$DEFINE USECHARATER}
 
 uses
@@ -53,7 +52,7 @@ type
     Images: TObjectList<TSpriteSheet>;
     FDrawProc: TSkDrawProc;
     procedure CompositeToBitmap(const AWidth, AHeight: Integer; const ADrawProc: TSkDrawProc);
-    procedure AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String);
+    procedure AddImage(const ASheetFormat: String; const AFilename: String; const Layer: String);
     procedure TestLoad;
 //    procedure DebugMessage(const AMsg: String);
     procedure PaintComposite(const SpriteIndex: Integer; const ACanvas: ISkCanvas; const ADest: TRectF; const SpriteRect: TRectF);
@@ -98,9 +97,11 @@ implementation
 
 uses
   Math, FMX.Skia.Canvas, TileUtils,
-  DateUtils, GMSimpleLog, JsonSettings;
+  DateUtils, GMSimpleLog, JsonSettings,
+  JsonSerializer
+  ;
 
-procedure TForm1.AddImage(const ASheetFormat: TSheetFormat; const AFilename: String; const Layer: String);
+procedure TForm1.AddImage(const ASheetFormat: String; const AFilename: String; const Layer: String);
 var
   elapsed: Int64;
   from: TDateTime;
@@ -126,19 +127,19 @@ var
 begin
   from := Now;
   {$IF DEFINED(USECHARATER)}
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Shadow/Spritesheet.png', 'shadow');
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Base/RTP_1/Spritesheet.png', 'base');
+  AddImage('Character', BaseDir + SheetDir + 'Shadow/Spritesheet.png', 'shadow');
+  AddImage('Character', BaseDir + SheetDir + 'Base/RTP_1/Spritesheet.png', 'base');
 
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Top/RTP_1/Spritesheet.png', 'top');
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Bottom/RTP_1/Spritesheet.png', 'bottom');
+  AddImage('Character', BaseDir + SheetDir + 'Top/RTP_1/Spritesheet.png', 'top');
+  AddImage('Character', BaseDir + SheetDir + 'Bottom/RTP_1/Spritesheet.png', 'bottom');
 
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Hair/RTP_1/Spritesheet.png', 'hair');
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Head/RTP_1/Spritesheet.png', 'head');
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'FacialHair/RTP_1/Spritesheet.png', 'facial_hair');
+  AddImage('Character', BaseDir + SheetDir + 'Hair/RTP_1/Spritesheet.png', 'hair');
+  AddImage('Character', BaseDir + SheetDir + 'Head/RTP_1/Spritesheet.png', 'head');
+  AddImage('Character', BaseDir + SheetDir + 'FacialHair/RTP_1/Spritesheet.png', 'facial_hair');
 
-//  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Xbow/Spritesheet.png', 'xbow');
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Sword/Spritesheet.png', 'sword');
-  AddImage(TSheetFormat.Character, BaseDir + SheetDir + 'Weapons/RTP_Shield/Spritesheet.png', 'shield');
+//  AddImage('Character', BaseDir + SheetDir + 'Weapons/RTP_Xbow/Spritesheet.png', 'xbow');
+  AddImage('Character', BaseDir + SheetDir + 'Weapons/RTP_Sword/Spritesheet.png', 'sword');
+  AddImage('Character', BaseDir + SheetDir + 'Weapons/RTP_Shield/Spritesheet.png', 'shield');
   {$ELSE}
   AddImage(TSheetFormat.Monster, BaseDir + SheetDir + 'Spritesheet_Shadow.png', 'shadow');
   AddImage(TSheetFormat.Monster, BaseDir + SheetDir + 'Spritesheet.png', 'monster');
@@ -256,12 +257,48 @@ begin
   Images.Free;
 end;
 
+procedure TestLayoutLoadDict;
+var
+  Layouts: TSheetLayoutDict;
+  Layout: TSheetLayout;
+  Key: String;
+  I: Integer;
+  A: String;
+begin
+  Layouts := TSheetLayoutDict.Create([doOwnsValues]);
+  LoadObjAsJson(Layouts, Settings.AppHome, 'SheetLayouts.json');
+  GMS.LogFormat('Layouts = %d',[Layouts.Count]);
+  for Key in Layouts.Keys do
+    begin
+       if(Layouts.TryGetValue(Key, Layout)) then
+        begin
+          GMS.LogFormat('Layouts has %d frames',[Layout.FrameCount]);
+          if(Assigned(Layout.Items)) then
+            begin
+              for I := 0 to Layout.Items.Count -1 do
+                begin
+                  A := Layout.Items[I].Action;
+                  GMS.LogFormat('Action %d = %s',[I, A]);
+                end;
+            end
+          else
+            GMS.Log('BUT no Items Found');
+
+        end
+    else
+      GMS.Log('Layouts Key not found');
+    end;
+
+  Layouts.Free;
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 begin
 //  GlobalInit;
   GMS.LogProc := LogMemo;
   GMS.LogFormatProc := LogMemoFormat;
   GMS.LogFormat('Home = %s', [Settings.AppHome]);
+//  TestLayoutLoadDict;
   TabControl1.ActiveTab := TabItem1;
   Images := TObjectList<TSpriteSheet>.Create;
   FDrawProc := PaintComposite;

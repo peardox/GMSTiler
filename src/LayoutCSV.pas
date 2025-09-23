@@ -4,16 +4,17 @@ interface
 
 uses
   System.SysUtils, System.IOUtils, System.Types, System.Classes,
-  System.Generics.Collections, System.Generics.Defaults;
+  System.Generics.Collections, System.Generics.Defaults,
+  System.TypInfo,
+  System.Rtti;
 
 type
   TActionType = (Loop, Singular, PingPong, UnAnimated, NeedsEdit, Offset);
   TActionTypeSet = Set of TActionType;
-  TSheetFormat = (Character, Monster);
   TDirectionFormat = (Directions8);
 
   TSheetLayoutItem = class
-  strict private
+  private
     FAction: string;
     FFirstFrame: Integer;
     FFrames: Integer;
@@ -21,6 +22,7 @@ type
     FActionFrames: Integer;
     FActionDirections: Integer;
   public
+    constructor Create;
     property Action: string read FAction write FAction;
     property FirstFrame: Integer read FFirstFrame write FFirstFrame;
     property Frames: Integer read FFrames write FFrames;
@@ -28,9 +30,10 @@ type
     property ActionFrames: Integer read FActionFrames write FActionFrames;
     property ActionDirections: Integer read FActionDirections write FActionDirections;
   end;
+  TSheetLayoutItemList = TObjectList<TSheetLayoutItem>;
 
   TSheetSpec = class
-  strict private
+  private
     FFilename: String;
     FColCount: Integer;
     FRowCount: Integer;
@@ -45,9 +48,9 @@ type
   end;
 
   TSheetLayout = class
-  strict private
-    FLayout: TObjectList<TSheetLayoutItem>;
-    FFormat: TSheetFormat;
+  private
+    FItems: TSheetLayoutItemList;
+    FFormat: String;
     FFilename: String;
     FColCount: Integer;
     FRowCount: Integer;
@@ -57,13 +60,13 @@ type
     function ActionSetFromString(const s: String): TActionTypeSet;
     function NormalizeAction(const S: String): String;
   public
-    constructor Create(const AFormat: TSheetFormat);
+    constructor Create;
     destructor Destroy(); override;
     procedure ImportLayoutCSV(const AFilename: String);
     procedure Clear;
     function Dump: String;
-    property Items: TObjectList<TSheetLayoutItem> read FLayout write FLayout;
-    property Format: TSheetFormat read FFormat;
+    property Items: TSheetLayoutItemList read FItems write FItems;
+    property Format: String read FFormat write FFormat;
     property Filename: String read FFilename write FFilename;
     property ColCount: Integer read FColCount write FColCount;
     property RowCount: Integer read FRowCount write FRowCount;
@@ -72,7 +75,7 @@ type
   end;
 
   TDirectionLayoutItem = class
-  strict private
+  private
     FCompassShort: string;
     FCompassLong: string;
     FCompassAngle: Integer;
@@ -81,11 +84,12 @@ type
     property CompassLong: string read FCompassLong write FCompassLong;
     property CompassAngle: Integer read FCompassAngle write FCompassAngle;
   end;
+  TDirectionLayoutItemList = TObjectList<TDirectionLayoutItem>;
 
 
   TDirectionLayout = class
-  strict private
-    FLayout: TObjectList<TDirectionLayoutItem>;
+  private
+    FLayout: TDirectionLayoutItemList;
     function ParseCSV(const S: String; const Linenum: Integer = 0): TDirectionLayoutItem;
   public
     constructor Create;
@@ -95,8 +99,12 @@ type
     function Dump: String;
   end;
 
-  TSheetLayoutDict = TObjectDictionary<TSheetFormat, TSheetLayout>;
+  TSheetLayoutDict = TObjectDictionary<String, TSheetLayout>;
+  TSheetLayoutList = TObjectList<TSheetLayout>;
   TDirectionLayoutDict = TObjectDictionary<TDirectionFormat, TDirectionLayout>;
+
+procedure LoadLayouts();
+procedure  UnLoadLayouts();
 
 var
   SheetLayouts: TSheetLayoutDict;
@@ -131,23 +139,32 @@ const
 
 implementation
 
+uses JsonSerializer, JsonSettings;
+
+{ TSheetLayoutItem }
+
+constructor TSheetLayoutItem.Create;
+begin
+  inherited;
+end;
+
 { TSheetLayout }
 
 procedure TSheetLayout.Clear;
 begin
-  FLayout.Clear;
+  FItems.Clear;
 end;
 
-constructor TSheetLayout.Create(const AFormat: TSheetFormat);
+constructor TSheetLayout.Create;
 begin
-  FFormat := AFormat;
-  FLayout := TObjectList<TSheetLayoutItem>.Create(True);
+  inherited;
+  FItems := TSheetLayoutItemList.Create(True);
 end;
 
 destructor TSheetLayout.Destroy;
 begin
-  if(Assigned(FLayout)) then
-    FLayout.Free;
+  if(Assigned(FItems)) then
+    FItems.Free;
   inherited;
 end;
 
@@ -157,9 +174,9 @@ var
   R: TSheetLayoutItem;
 begin
   Result := '';
-  for I := 0 to FLayout.Count - 1 do
+  for I := 0 to FItems.Count - 1 do
     begin
-      R := Flayout[I];
+      R := FItems[I];
       Result := Result +
                 System.SysUtils.Format('%2d - %-20s - %4d - %2d - %2d - %2d' + sLineBreak, [
                   I, R.Action, R.FirstFrame, R.Frames, R.ActionFrames, R.ActionDirections
@@ -195,7 +212,7 @@ begin
             Rec := ParseCSV(s, I);
             Rec.FirstFrame := FrameCount;
             FrameCount := FrameCount + Rec.Frames;
-            FLayout.Add(Rec);
+            FItems.Add(Rec);
           end;
       end;
   finally
@@ -528,28 +545,40 @@ end;
 
 procedure LoadLayouts();
 var
+  JsonLoaded: Boolean;
   Layout: TSheetLayout;
   Directions: TDirectionLayout;
 begin
+  JsonLoaded := False;
   if(not Assigned(SheetLayouts)) then
     begin
       SheetLayouts := TSheetLayoutDict.Create([doOwnsValues]);
 
-      Layout := TSheetLayout.Create(TSheetFormat.Character);
-      Layout.ImportLayoutCSV(LayoutDir + 'character.csv');
-      Layout.ColCount := 50;
-      Layout.RowCount := 50;
-      Layout.FrameCount := 2496;
-      Layout.SpareCount := 4;
-      SheetLayouts.Add(TSheetFormat.Character, Layout);
+      if(Assigned(Settings)) then
+        JsonLoaded := LoadObjAsJson(SheetLayouts, Settings.AppHome, 'SheetLayouts.json');
+      if(not JSonLoaded) then
+        begin
+          Layout := TSheetLayout.Create;
+          Layout.ImportLayoutCSV(LayoutDir + 'character.csv');
+          Layout.Format := 'Character';
+          Layout.ColCount := 50;
+          Layout.RowCount := 50;
+          Layout.FrameCount := 2496;
+          Layout.SpareCount := 4;
+          SheetLayouts.Add('Character', Layout);
 
-      Layout := TSheetLayout.Create(TSheetFormat.Monster);
-      Layout.ImportLayoutCSV(LayoutDir + 'monster.csv');
-      Layout.ColCount := 21;
-      Layout.RowCount := 21;
-      Layout.FrameCount := 440;
-      Layout.SpareCount := 1;
-      SheetLayouts.Add(TSheetFormat.Monster, Layout);
+          Layout := TSheetLayout.Create;
+          Layout.ImportLayoutCSV(LayoutDir + 'monster.csv');
+          Layout.Format := 'Monster';
+          Layout.ColCount := 21;
+          Layout.RowCount := 21;
+          Layout.FrameCount := 440;
+          Layout.SpareCount := 1;
+          SheetLayouts.Add('Monster', Layout);
+        end;
+
+//      if(Assigned(Settings)) then
+//        SaveObjAsJson(SheetLayouts, Settings.AppHome, 'SheetLayouts.json');
 
       DirectionLayouts := TDirectionLayoutDict.Create([doOwnsValues]);
       Directions := TDirectionLayout.Create;
@@ -565,11 +594,5 @@ begin
   if(Assigned(SheetLayouts)) then
     SheetLayouts.Free;
 end;
-
-initialization
-  LoadLayouts();
-
-finalization
-  UnLoadLayouts();
 
 end.
