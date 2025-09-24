@@ -94,6 +94,9 @@ var
   LConfig: INeonConfiguration;
 begin
   Result := False;
+  if not FileExists(TPath.Combine(APathname, AFilename)) then
+    Exit;
+
   LJSON := TJSONObject.ParseJSONValue(TFile.ReadAllText(TPath.Combine(APathname, AFilename)));
 
   if not Assigned(LJSON) then
@@ -104,11 +107,15 @@ begin
     LReader := TNeonDeserializerJSON.Create(LConfig);
     try
       LReader.JSONToObject(Obj, LJSON);
-      GMS.Log('===== JSON Errors =====');
-      for var I := 0 to LReader.Errors.Count - 1 do
-        GMS.Log(LReader.Errors[I]);
-      GMS.Log('=======================');
-      Result := True;
+      if(LReader.Errors.Count <> 0) then
+        begin
+          GMS.Log('===== JSON Errors =====');
+          for var I := 0 to LReader.Errors.Count - 1 do
+            GMS.Log(LReader.Errors[I]);
+          GMS.Log('=======================');
+        end
+      else
+        Result := True;
     finally
       LReader.Free;
     end;
@@ -124,6 +131,8 @@ var
   LConfig: INeonConfiguration;
 begin
   Result := False;
+  if not FileExists(TPath.Combine(APathname, AFilename)) then
+    Exit;
   LJSON := TJSONObject.ParseJSONValue(TFile.ReadAllText(TPath.Combine(APathname, AFilename)));
 
   if not Assigned(LJSON) then
@@ -134,7 +143,15 @@ begin
     LReader := TNeonDeserializerJSON.Create(LConfig);
     try
       LReader.JSONToObject(Obj, LJSON);
-      Result := True;
+      if(LReader.Errors.Count <> 0) then
+        begin
+          GMS.Log('===== JSON Errors =====');
+          for var I := 0 to LReader.Errors.Count - 1 do
+            GMS.Log(LReader.Errors[I]);
+          GMS.Log('=======================');
+        end
+      else
+        Result := True;
     finally
       LReader.Free;
     end;

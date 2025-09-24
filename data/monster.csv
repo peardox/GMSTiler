@@ -1,4 +1,8 @@
-Spritesheet.png
+# Code, xspr, yspr, sheetcount, totalrows, totalsprites, totalfree
+"MonsterNew",21,21,1,14,440,1
+# Filename, rows, sprites,free
+"Spritesheet.png",14,440,1
+# sprite rows start
 "walk",                   64,         "L",        8,       8
 "run",                    64,         "L",        8,       8
 "idle",                   40,         "L",        5,       8

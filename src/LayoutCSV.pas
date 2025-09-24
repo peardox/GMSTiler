@@ -56,9 +56,10 @@ type
     FRowCount: Integer;
     FFrameCount: Integer;
     FSpareCount: Integer;
-    function ParseCSV(const S: String; const Linenum: Integer = 0): TSheetLayoutItem;
     function ActionSetFromString(const s: String): TActionTypeSet;
     function NormalizeAction(const S: String): String;
+    function ParseCSVRec(const S: String;
+      const Linenum: Integer): TSheetLayoutItem;
   public
     constructor Create;
     destructor Destroy(); override;
@@ -90,7 +91,8 @@ type
   TDirectionLayout = class
   private
     FLayout: TDirectionLayoutItemList;
-    function ParseCSV(const S: String; const Linenum: Integer = 0): TDirectionLayoutItem;
+    function ParseCSVRec(const S: String;
+      const Linenum: Integer): TDirectionLayoutItem;
   public
     constructor Create;
     destructor Destroy(); override;
@@ -140,6 +142,89 @@ const
 implementation
 
 uses JsonSerializer, JsonSettings;
+
+procedure ParseCSVLine(var Fields: Array of String; const S: String; const Linenum: Integer);
+var
+  l: Integer;
+  i: Integer;
+  FieldNum: Integer;
+  QuotedField: Boolean;
+  EscapedChar: Boolean;
+  TempText: String;
+  C: Char;
+  FieldCount: Integer;
+begin
+  QuotedField := False;
+  EscapedChar := False;
+  FieldNum := 0;
+  TempText := '';
+
+  FieldCount := Length(Fields);
+
+  // Length of string
+  l := Length(S);
+
+  // Loop over the string
+  for i := 1 to l do
+    begin
+    if EscapedChar then
+      begin
+        if (ord(S[i]) = CHECK_DBLQUOTE) then
+          TempText := TempText + '"'
+        else
+          begin
+            C := S[i];
+            raise Exception.Create('Escaped Field Found - Unhandled (' + IntToStr(Linenum + 1) + ', ' + IntToStr(i + 1) + ', ' + IntToHex(Ord(C)) + ')' + sLineBreak + S);
+          end;
+        EscapedChar := False;
+      end
+    else if (ord(S[i]) = CHECK_SLASH) then
+      begin
+        if EscapedChar then
+        begin
+          raise Exception.Create('Escaped Field Found - Unhandled by EscapedChar');
+        end
+      else
+        begin
+          EscapedChar := True;
+        end;
+      end
+    else if (ord(S[i]) = CHECK_DBLQUOTE) and not(EscapedChar) then
+      begin
+        if QuotedField then
+        begin
+          QuotedField := False;
+        end
+      else
+        begin
+          QuotedField := True;
+        end;
+      end
+    else if (ord(S[i]) = CHECK_COMMA) and not(EscapedChar) and (QuotedField) then
+      begin
+        TempText := TempText + ','
+      end
+    else if (ord(S[i]) = CHECK_COMMA) and not(EscapedChar) and not(QuotedField) then
+      begin
+        TempText := TempText.Trim;
+        Fields[FieldNum] := TempText;
+
+        Inc(FieldNum);
+        if(FieldNum >= FieldCount) then
+          raise Exception.Create('Fieldnum count overflow');
+        TempText := '';
+      end
+    else
+      begin
+        TempText := TempText + S[i];
+      end;
+    end;
+
+    // Catch Trailing field
+    TempText := TempText.Trim;
+    Fields[FieldNum] := TempText;
+
+end;
 
 { TSheetLayoutItem }
 
@@ -209,7 +294,7 @@ begin
               end;
             if I = 1 then
               Continue;
-            Rec := ParseCSV(s, I);
+            Rec := ParseCSVRec(s, I);
             Rec.FirstFrame := FrameCount;
             FrameCount := FrameCount + Rec.Frames;
             FItems.Add(Rec);
@@ -255,106 +340,25 @@ begin
           NextUpper := True
       else
           Result := Result + S[I];
-
-
     end;
 end;
 
-function TSheetLayout.ParseCSV(const S: String; const Linenum: Integer): TSheetLayoutItem;
+function TSheetLayout.ParseCSVRec(const S: String; const Linenum: Integer): TSheetLayoutItem;
 var
-  l: Integer;
-  i: Integer;
-  FieldNum: Integer;
-  QuotedField: Boolean;
-  EscapedChar: Boolean;
-  OutRec: TSheetLayoutItem;
-  TempText: String;
-  C: Char;
+  FieldText: Array[0..4] of String;
 begin
-  QuotedField := False;
-  EscapedChar := False;
-  FieldNum := 0;
 
-  OutRec := TSheetLayoutItem.Create;
+  Result := TSheetLayoutItem.Create;
+  try
+    ParseCSVLine(FieldText, S, Linenum);
+    Result.Action := NormalizeAction(FieldText[0]);
+    Result.Frames := StrToIntDef(FieldText[1], -1);
+    Result.ActionType := ActionSetFromString(FieldText[2]);
+    Result.ActionFrames := StrToIntDef(FieldText[3], -1);
+    Result.ActionDirections := StrToIntDef(FieldText[4], -1);
+  finally
 
-  // Length of string
-  l := Length(S);
-
-  // Loop over the string
-  for i := 1 to l do
-    begin
-    if EscapedChar then
-      begin
-        if (ord(S[i]) = CHECK_DBLQUOTE) then
-          TempText := TempText + '"'
-        else
-          begin
-            C := S[i];
-            raise Exception.Create('Escaped Field Found - Unhandled (' + IntToStr(Linenum + 1) + ', ' + IntToStr(i + 1) + ', ' + IntToHex(Ord(C)) + ')' + sLineBreak + S);
-          end;
-        EscapedChar := False;
-      end
-    else if (ord(S[i]) = CHECK_SLASH) then
-      begin
-        if EscapedChar then
-        begin
-          raise Exception.Create('Escaped Field Found - Unhandled by EscapedChar');
-        end
-      else
-        begin
-          EscapedChar := True;
-        end;
-      end
-    else if (ord(S[i]) = CHECK_DBLQUOTE) and not(EscapedChar) then
-      begin
-        if QuotedField then
-        begin
-          QuotedField := False;
-        end
-      else
-        begin
-          QuotedField := True;
-        end;
-      end
-    else if (ord(S[i]) = CHECK_COMMA) and not(EscapedChar) and (QuotedField) then
-      begin
-        TempText := TempText + ','
-      end
-    else if (ord(S[i]) = CHECK_COMMA) and not(EscapedChar) and not(QuotedField) then
-      begin
-        TempText := TempText.Trim;
-        case FieldNum of
-          0: OutRec.Action := NormalizeAction(TempText);
-          1: OutRec.Frames := StrToIntDef(Temptext, -1);
-          2: OutRec.ActionType := ActionSetFromString(TempText);
-          3: OutRec.ActionFrames := StrToIntDef(Temptext, -1);
-          4: OutRec.ActionDirections := StrToIntDef(Temptext, -1);
-        else
-          raise Exception.Create('Fieldnum count overflow');
-        end;
-
-        Inc(FieldNum);
-        TempText := '';
-      end
-    else
-      begin
-        TempText := TempText + S[i];
-      end;
-    end;
-
-    // Catch Trailing field
-    TempText := TempText.Trim;
-    case FieldNum of
-      0: OutRec.Action := NormalizeAction(TempText);
-      1: OutRec.Frames := StrToIntDef(Temptext, -1);
-      2: OutRec.ActionType := ActionSetFromString(TempText);
-      3: OutRec.ActionFrames := StrToIntDef(Temptext, -1);
-      4: OutRec.ActionDirections := StrToIntDef(Temptext, -1);
-    else
-      raise Exception.Create('Fieldnum count overflow');
-    end;
-
-    Result := OutRec;
+  end;
 end;
 
 { TSheetLayoutItem }
@@ -441,7 +445,7 @@ begin
               end;
             if I = 1 then
               Continue;
-            Rec := ParseCSV(s, I);
+            Rec := ParseCSVRec(s, I);
             FLayout.Add(Rec);
           end;
       end;
@@ -450,97 +454,20 @@ begin
   end;
 end;
 
-function TDirectionLayout.ParseCSV(const S: String; const Linenum: Integer): TDirectionLayoutItem;
+function TDirectionLayout.ParseCSVRec(const S: String; const Linenum: Integer): TDirectionLayoutItem;
 var
-  l: Integer;
-  i: Integer;
-  FieldNum: Integer;
-  QuotedField: Boolean;
-  EscapedChar: Boolean;
-  OutRec: TDirectionLayoutItem;
-  TempText: String;
-  C: Char;
+  FieldText: Array[0..2] of String;
 begin
-  QuotedField := False;
-  EscapedChar := False;
-  FieldNum := 0;
 
-  OutRec := TDirectionLayoutItem.Create;
+  Result := TDirectionLayoutItem.Create;
+  try
+    ParseCSVLine(FieldText, S, Linenum);
+    Result.CompassShort := FieldText[0];
+    Result.CompassLong := FieldText[1];
+    Result.CompassAngle := StrToIntDef(FieldText[2], -1);
+  finally
 
-  // Length of string
-  l := Length(S);
-
-  // Loop over the string
-  for i := 1 to l do
-    begin
-    if EscapedChar then
-      begin
-        if (ord(S[i]) = CHECK_DBLQUOTE) then
-          TempText := TempText + '"'
-        else
-          begin
-            C := S[i];
-            raise Exception.Create('Escaped Field Found - Unhandled (' + IntToStr(Linenum + 1) + ', ' + IntToStr(i + 1) + ', ' + IntToHex(Ord(C)) + ')' + sLineBreak + S);
-          end;
-        EscapedChar := False;
-      end
-    else if (ord(S[i]) = CHECK_SLASH) then
-      begin
-        if EscapedChar then
-        begin
-          raise Exception.Create('Escaped Field Found - Unhandled by EscapedChar');
-        end
-      else
-        begin
-          EscapedChar := True;
-        end;
-      end
-    else if (ord(S[i]) = CHECK_DBLQUOTE) and not(EscapedChar) then
-      begin
-        if QuotedField then
-        begin
-          QuotedField := False;
-        end
-      else
-        begin
-          QuotedField := True;
-        end;
-      end
-    else if (ord(S[i]) = CHECK_COMMA) and not(EscapedChar) and (QuotedField) then
-      begin
-        TempText := TempText + ','
-      end
-    else if (ord(S[i]) = CHECK_COMMA) and not(EscapedChar) and not(QuotedField) then
-      begin
-        TempText := TempText.Trim;
-        case FieldNum of
-          0: OutRec.CompassShort := TempText;
-          1: OutRec.CompassLong := TempText;
-          2: OutRec.CompassAngle := StrToIntDef(TempText, -1);
-        else
-          raise Exception.Create('Fieldnum count overflow');
-        end;
-
-        Inc(FieldNum);
-        TempText := '';
-      end
-    else
-      begin
-        TempText := TempText + S[i];
-      end;
-    end;
-
-    // Catch Trailing field
-    TempText := TempText.Trim;
-    case FieldNum of
-      0: OutRec.CompassShort := TempText;
-      1: OutRec.CompassLong := TempText;
-      2: OutRec.CompassAngle := StrToIntDef(TempText, -1);
-    else
-      raise Exception.Create('Fieldnum count overflow');
-    end;
-
-    Result := OutRec;
+  end;
 end;
 
 procedure LoadLayouts();
@@ -555,7 +482,7 @@ begin
       SheetLayouts := TSheetLayoutDict.Create([doOwnsValues]);
 
       if(Assigned(Settings)) then
-        JsonLoaded := LoadObjAsJson(SheetLayouts, Settings.AppHome, 'SheetLayouts.json');
+        JsonLoaded := LoadObjAsJson(SheetLayouts, Settings.AppHome, 'zSheetLayouts.json');
       if(not JSonLoaded) then
         begin
           Layout := TSheetLayout.Create;
