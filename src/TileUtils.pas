@@ -43,8 +43,8 @@ function GetLayerRect(NewRect: TRect; BoundRect: TRect): TRect;
 function EncloseRect(ARect: TRect; Border: Integer = 0): TRect;
 function EncloseRectF(ARect: TRect; Border: Integer = 0): TRectF;
 procedure ScanFiles(const ADir: String; const ASubDir: String; const AFileExt: TArray<String>; var AList: TObjectList<TFileDirectory>; var GroupID: Integer);
-function SheetRemap(const SpriteIndex: Integer; const SpriteCount: Integer; const SheetSizeX: Integer; const SheetSizeY: Integer): TRectArray;
-procedure GrabSprite(LSurface: ISkSurface; const AFilename: String);
+procedure GrabSprite(LImage: ISkImage; const AFilename: String); overload;
+procedure GrabSprite(LSurface: ISkSurface; const AFilename: String); overload;
 function IsSpriteEmpty(Pixels: ISkSurface; const AAlphaThreshold: Single = 0): Boolean; overload;
 function IsSpriteEmpty(Pixels: ISkImage; const AAlphaThreshold: Single = 0): Boolean; overload;
 function IsSpriteEmpty(Pixels: ISkPixmap; const AAlphaThreshold: Single = 0): Boolean; overload;
@@ -260,7 +260,7 @@ begin
         break;
     end;
 
-  Result := Rect(BoundLeft, BoundTop, BoundRight, BoundBottom);
+  Result := Rect(BoundLeft, BoundTop, BoundRight+1, BoundBottom+1);
 
 end;
 
@@ -362,53 +362,6 @@ begin
     end;
 end;
 
-function SheetRemap(const SpriteIndex: Integer; const SpriteCount: Integer; const SheetSizeX: Integer; const SheetSizeY: Integer): TRectArray;
-var
-  Col: Integer;
-  Row: Integer;
-  procedure SplitRun(var Runs: Integer; const SpriteCol: Integer; const SpritesLeft: Integer);
-  begin
-    if(SpritesLeft > 0) then
-      begin
-        Inc(Runs);
-        if(SpriteCol + SpritesLeft) > SheetSizeX then
-          begin
-            SplitRun(Runs, 0, SpritesLeft - (SheetSizeX - SpriteCol));
-          end;
-     end;
-  end;
-  procedure MakeRun(var Res: TRectArray; const Runs: Integer; const SpriteRow: Integer;  const SpriteCol: Integer; const SpritesLeft: Integer);
-  var
-    I: Integer;
-    FromCol: Integer;
-    ToCol: Integer;
-  begin
-    if(SpritesLeft > 0) then
-      begin
-        FromCol := SpriteCol;
-        ToCol := SpritesLeft;
-        for I := 0 to Runs - 1 do
-          begin
-            if (FromCol + ToCol) > SheetSizeX then
-              begin
-                Res[I] := Rect(FromCol,SpriteRow + I,FromCol + (SheetSizeX - FromCol),SpriteRow + I + 1);
-                ToCol := ToCol - (SheetSizeX - FromCol)
-              end
-            else
-              Res[I] := Rect(FromCol, SpriteRow + I, FromCol + ToCol, SpriteRow + I + 1);
-            FromCol := 0;
-          end;
-     end;
-  end;
-begin
-  Row := SpriteIndex div SheetSizeX;
-  Col := SpriteIndex - (Row * SheetSizeX);
-  var Runs := 0;
-  SplitRun(Runs, Col, SpriteCount);
-  SetLength(Result, Runs);
-  MakeRun(Result, Runs, Row, Col, SpriteCount);
-end;
-
 procedure GrabSprite(LSurface: ISkSurface; const AFilename: String);
 var
   LStream: TMemoryStream;
@@ -421,6 +374,20 @@ begin
   LBitmap.SaveToFile(AFilename);
   LBitmap.Free;
   LStream.Free;
+end;
+
+procedure GrabSprite(LImage: ISkImage; const AFilename: String);
+var
+  LSurface: ISkSurface;
+  LPaint: TSkPaint;
+  R: TRectF;
+begin
+  LPaint := TSkPaint.Create;
+  R := RectF(0,0,LImage.Width, LImage.Height);
+  LSurface := TSkSurface.MakeRaster(LImage.Width, LImage.Height);
+  LSurface.Canvas.DrawImageRect(LImage, R, R, LPaint);
+  GrabSprite(LSurface, AFilename);
+  LPaint.Free;
 end;
 
 end.

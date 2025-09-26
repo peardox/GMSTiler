@@ -58,7 +58,7 @@ type
     FSpareCount: Integer;
     function ActionSetFromString(const s: String): TActionTypeSet;
     function NormalizeAction(const S: String): String;
-    function ParseCSVRec(const S: String;
+    function ParseCSVSheetLayoutItemRec(const S: String;
       const Linenum: Integer): TSheetLayoutItem;
   public
     constructor Create;
@@ -294,7 +294,7 @@ begin
               end;
             if I = 1 then
               Continue;
-            Rec := ParseCSVRec(s, I);
+            Rec := ParseCSVSheetLayoutItemRec(s, I);
             Rec.FirstFrame := FrameCount;
             FrameCount := FrameCount + Rec.Frames;
             FItems.Add(Rec);
@@ -343,7 +343,7 @@ begin
     end;
 end;
 
-function TSheetLayout.ParseCSVRec(const S: String; const Linenum: Integer): TSheetLayoutItem;
+function TSheetLayout.ParseCSVSheetLayoutItemRec(const S: String; const Linenum: Integer): TSheetLayoutItem;
 var
   FieldText: Array[0..4] of String;
 begin

@@ -124,6 +124,8 @@ procedure TForm1.TestLoad();
 var
   elapsed: Int64;
   from: TDateTime;
+  I, J: Integer;
+  CB, SB: Int64;
 begin
   from := Now;
   {$IF DEFINED(USECHARATER)}
@@ -146,8 +148,18 @@ begin
   {$ENDIF}
 
 
+  CB := 0;
+  SB := 0;
+
+  for I:= 0 to Images.Count -1 do
+    begin
+      CB := CB + Images[I].CompactBytes;
+      SB := SB + Images[I].SpriteBytes;
+    end;
+
+    Caption := Caption + Format(' : CompactedTo = %dM  : SpriteSheets = %dM : Stored Pixels = %3.2f%%', [CB div (1024 * 1024), SB div (1024 * 1024), Single((CB/SB) * 100)]);
   elapsed := DateUtils.MilliSecondsBetween(Now, from);
-  GMS.Log(Format('Load Time : %1.3f',[Single(elapsed / 1000)]));
+  GMS.Log(Format('Load Time : %1.3f, Compact = %d, Full = %d',[Single(elapsed / 1000), CB, SB]));
 
   LayoutLayer.RePaint;
 end;
