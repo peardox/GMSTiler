@@ -1,5 +1,5 @@
-# Code, xspr, yspr, sheetcount, totalrows, totalsprites, totalfree
-"CharacterNew",25,25,1,69,2496,4
+# Code, Desc, xspr, yspr, sheetcount, totalrows, totalsprites, totalfree
+"CharacterNew","",25,25,1,69,2496,4
 # Filename, rows, sprites,free
 "Spritesheet.png",69,2496,4
 # sprite rows start
