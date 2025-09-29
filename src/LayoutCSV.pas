@@ -114,7 +114,7 @@ var
 
 const
 {$IF DEFINED(MSWINDOWS)}
-  LayoutDir: String = 'D:/work/assets/PVG/';
+  LayoutDir: String = 'c:/work/PVG/';
 {$ELSEIF DEFINED(OSX64)}
   LayoutDir: String = '/Volumes/Seagate4T/Assets/2D/PVG/';
 {$ELSEIF DEFINED(LINUX64)}

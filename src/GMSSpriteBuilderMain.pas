@@ -69,7 +69,7 @@ var
 
 const
 {$IF DEFINED(MSWINDOWS)}
-  BaseDir: String = 'D:/work/assets/PVG/';
+  BaseDir: String = 'c:/work/PVG/';
   {$IF DEFINED(USECHARATER)}
   SheetDir: String = 'RPG_Tools/RPGTools_CharacterPieces_1/Male/';
   {$ELSE}
